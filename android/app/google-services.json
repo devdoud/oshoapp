@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "639832676709",
+    "project_id": "osho-f0ba3",
+    "storage_bucket": "osho-f0ba3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:639832676709:android:64e20b5704e7f0093c298c",
+        "android_client_info": {
+          "package_name": "com.example.osho"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "639832676709-gbnmn9tfv32s96qf1edslctdm22c54o6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.osho",
+            "certificate_hash": "1eaba6cd2b78fd5bc00df517983d8db144384756"
+          }
+        },
+        {
+          "client_id": "639832676709-f5jd17n4q1lad17k7aabdqlb2vhve1na.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZdDlSRHjZQ8HHi3e1HJl-AUqmb7_5R04"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "639832676709-f5jd17n4q1lad17k7aabdqlb2vhve1na.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "639832676709-psgqg446iq16vflor8kpgm49bo9nmkps.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.osho"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,17 @@
+flutter_native_splash:
+  color: "#181818"
+  color_dark: "#FFFFFF"
+  image: assets/logos/logo_osho_dark.png
+  image_dark: assets/logos/logo_osho_light.png
+  
+  android_gravity: center
+
+  android_12:
+    color: "#181818"
+    color_dark: "#FFFFFF"
+    image: assets/logos/logo_osho_dark.png
+    image_dark: assets/logos/logo_osho_light.png
+
+    android_gravity: center
+
+  web: false
