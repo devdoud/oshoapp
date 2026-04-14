@@ -289,10 +289,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               stripeController.makePayment(
                 total,
                 currency: 'XOF',
-                onSuccess: widget.isCart
-                    ? (amount) =>
-                        CheckoutController.instance.processCartOrder(amount)
-                    : null,
+                isCart: widget.isCart,
               );
             } else {
               // Mobile Payment (Custom Logic or generic processOrder)
@@ -308,3 +305,4 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 }
+

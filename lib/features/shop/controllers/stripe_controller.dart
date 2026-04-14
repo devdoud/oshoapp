@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get/get.dart';
@@ -11,29 +12,39 @@ class StripeController extends GetxController {
 
   final cardNameController = TextEditingController();
 
-  Future<void> makePayment(double totalAmount,
-      {String currency = 'XOF',
-      Future<void> Function(double totalAmount)? onSuccess}) async {
+  Future<void> makePayment(
+    double totalAmount, {
+    String currency = 'XOF',
+    required bool isCart,
+  }) async {
     final checkoutController = CheckoutController.instance;
+
     try {
       checkoutController.isLoading.value = true;
       debugPrint('[STRIPE] Demarrage du processus de paiement...');
 
-      // 1. Create Payment Intent via Supabase Edge Function
+      final checkoutPayload = await checkoutController.buildCheckoutPayload(
+        totalAmount: totalAmount,
+        isCart: isCart,
+      );
+
       final minorAmount = _toMinorUnits(totalAmount, currency);
       final paymentIntentData = await createPaymentIntent(
         minorAmount,
         currency,
+        checkoutPayload,
       );
 
-      if (paymentIntentData == null || paymentIntentData['client_secret'] == null) {
+      if (paymentIntentData == null ||
+          paymentIntentData['client_secret'] == null ||
+          paymentIntentData['id'] == null) {
         throw 'Impossible de generer le secret de paiement.';
       }
 
-      final String clientSecret = paymentIntentData['client_secret'];
+      final clientSecret = paymentIntentData['client_secret'] as String;
+      final paymentIntentId = paymentIntentData['id'] as String;
       debugPrint('[STRIPE] Intent cree. Secret recupere.');
 
-      // 2. Initialize Payment Sheet
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: clientSecret,
@@ -45,30 +56,25 @@ class StripeController extends GetxController {
         ),
       );
 
-      // 3. Display Payment Sheet
       debugPrint('[STRIPE] Affichage de l\'interface de paiement...');
       await Stripe.instance.presentPaymentSheet();
 
-      // --- CRITICAL DELAY ---
-      debugPrint('[STRIPE] Paiement valide cote client. Attente fermeture UI...');
-      await Future.delayed(const Duration(milliseconds: 1000));
+      debugPrint('[STRIPE] Paiement valide cote client. Confirmation serveur...');
+      await Future.delayed(const Duration(milliseconds: 800));
 
-      // 4. Finalize Order & Redirect
-      debugPrint('[DATABASE] Tentative d\'enregistrement de la commande...');
-      if (onSuccess != null) {
-        await onSuccess(totalAmount);
-      } else {
-        await checkoutController.processOrder(totalAmount);
-      }
-      debugPrint('[DATABASE] Commande enregistree avec succes.');
-      debugPrint('[WEBHOOK] Le webhook notify-tailors devrait etre declenche...');
+      await checkoutController.confirmStripeOrder(
+        paymentIntentId: paymentIntentId,
+        isCart: isCart,
+      );
     } on StripeException catch (e) {
       debugPrint(
-          '[STRIPE ERROR] Code: ${e.error.code}, Message: ${e.error.localizedMessage}');
+        '[STRIPE ERROR] Code: ${e.error.code}, Message: ${e.error.localizedMessage}',
+      );
       if (e.error.code != FailureCode.Canceled) {
         OLoaders.errorSnackBar(
-            title: 'Paiement echoue',
-            message: e.error.localizedMessage ?? 'Erreur');
+          title: 'Paiement echoue',
+          message: e.error.localizedMessage ?? 'Erreur Stripe',
+        );
       }
     } catch (e) {
       debugPrint('[GENERAL ERROR] Une erreur est survenue: $e');
@@ -84,27 +90,21 @@ class StripeController extends GetxController {
     Session? session = auth.currentSession;
 
     if (session == null) {
-      try {
-        final refresh = await auth.refreshSession();
-        session = refresh.session;
-      } catch (_) {
-        session = null;
-      }
-    }
-
-    if (session == null) {
       throw 'Vous devez etre connecte pour effectuer un paiement.';
     }
 
-    // Rafraîchir si le token expire dans moins d'1 minute
-    final expiresAt = session.expiresAt;
-    if (expiresAt != null) {
-      final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000)
-          .subtract(const Duration(minutes: 1));
-      if (DateTime.now().isAfter(expiry)) {
-        final refresh = await auth.refreshSession();
-        if (refresh.session != null) {
-          session = refresh.session;
+    try {
+      final refresh = await auth.refreshSession();
+      if (refresh.session != null) {
+        session = refresh.session;
+      }
+    } catch (_) {
+      final expiresAt = session?.expiresAt;
+      if (expiresAt != null) {
+        final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000)
+            .subtract(const Duration(minutes: 1));
+        if (DateTime.now().isAfter(expiry)) {
+          rethrow;
         }
       }
     }
@@ -113,29 +113,41 @@ class StripeController extends GetxController {
   }
 
   Future<Map<String, dynamic>?> createPaymentIntent(
-      int amount, String currency) async {
+    int amount,
+    String currency,
+    Map<String, dynamic> orderPayload,
+  ) async {
     try {
       final session = await _requireValidSession();
+      debugPrint(
+        '[STRIPE] Session OK user=${Supabase.instance.client.auth.currentUser?.id} expiresAt=${session.expiresAt}',
+      );
+
       final response = await Supabase.instance.client.functions.invoke(
         'create-payment-intent',
-        headers: {
-          'Authorization': 'Bearer ${session.accessToken}',
-        },
         body: {
           'amount': amount,
           'currency': currency,
+          'order_payload': orderPayload,
         },
       );
 
       if (response.status >= 400) {
-        throw 'Erreur de paiement (status: ${response.status}).';
+        final data = response.data;
+        final message = data is Map
+            ? data['error']
+            : data is String
+                ? data
+                : 'Erreur de paiement.';
+        throw message.toString();
       }
 
       final data = response.data;
       if (data is String) {
         return jsonDecode(data) as Map<String, dynamic>;
       }
-      return data as Map<String, dynamic>?;
+
+      return Map<String, dynamic>.from(data as Map);
     } catch (e) {
       debugPrint('[PAYMENT INTENT ERROR] $e');
       rethrow;

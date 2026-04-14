@@ -7,7 +7,6 @@ class OrderRepository extends GetxController {
 
   final _supabase = Supabase.instance.client;
 
-  /// Fetch User Orders
   Future<List<OrderModel>> fetchUserOrders() async {
     try {
       final userId = _supabase.auth.currentUser?.id;
@@ -26,7 +25,6 @@ class OrderRepository extends GetxController {
     }
   }
 
-  /// Fetch All Pending Orders (for tailors)
   Future<List<OrderModel>> fetchPendingOrders() async {
     try {
       final response = await _supabase
@@ -42,15 +40,18 @@ class OrderRepository extends GetxController {
     }
   }
 
-  /// Save Order (Create)
-  Future<OrderModel> saveOrder(OrderModel order, String userId) async {
+  Future<OrderModel> saveOrder(
+    OrderModel order,
+    String userId, {
+    String paymentStatus = 'pending',
+  }) async {
     try {
-      // 1. Insert Order
       final orderData = {
         'user_id': userId,
         'status': order.status,
         'total_amount': order.totalAmount,
-        'payment_status': 'completed', // Stripe payment already verified before reaching here
+        'payment_status': paymentStatus,
+        'payment_method': order.paymentMethod,
         'shipping_address': order.shippingAddress,
       };
 
@@ -59,12 +60,9 @@ class OrderRepository extends GetxController {
 
       final orderId = orderResponse['id'];
 
-      // 2. Insert Order Items
       for (var item in order.items) {
-        // Fetch measurement snapshot if ID provided but snapshot missing
         Map<String, dynamic>? snapshot = item.measurementSnapshot;
         if (item.measurementProfileId != null && snapshot == null) {
-          // We could use MeasurementRepository here, or just query directly
           final profileData = await _supabase
               .from('measurement_profiles')
               .select()
@@ -88,7 +86,6 @@ class OrderRepository extends GetxController {
         await _supabase.from('order_items').insert(itemData);
       }
 
-      // Return the completed OrderModel
       return OrderModel(
         id: orderId,
         userId: userId,

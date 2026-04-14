@@ -51,3 +51,6 @@
 # Keep line numbers for crash reports
 -renamesourcefileattribute SourceFile
 -keepattributes SourceFile,LineNumberTable
+
+# Stripe push provisioning warnings
+-dontwarn com.stripe.android.pushProvisioning.**

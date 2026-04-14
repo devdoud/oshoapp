@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:osho/common/widgets/loaders/loader.dart';
@@ -6,8 +8,8 @@ import 'package:osho/features/personalization/controllers/address_controller.dar
 import 'package:osho/features/personalization/controllers/measurement_controller.dart';
 import 'package:osho/features/personalization/controllers/user_controller.dart';
 import 'package:osho/features/personalization/models/address_model.dart';
-import 'package:osho/features/shop/controllers/customization_controller.dart';
 import 'package:osho/features/shop/controllers/cart_controller.dart';
+import 'package:osho/features/shop/controllers/customization_controller.dart';
 import 'package:osho/features/shop/models/order_model.dart';
 import 'package:osho/features/shop/screens/checkout/success_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -45,11 +47,13 @@ class CheckoutController extends GetxController {
       }
 
       _addressWorker = ever<AddressModel?>(
-          addressBookController.selectedAddress, (address) {
-        if (address != null) {
-          setAddress(address, overwrite: false);
-        }
-      });
+        addressBookController.selectedAddress,
+        (address) {
+          if (address != null) {
+            setAddress(address, overwrite: false);
+          }
+        },
+      );
     }
   }
 
@@ -124,72 +128,176 @@ class CheckoutController extends GetxController {
     return true;
   }
 
+  Map<String, dynamic> _buildShippingAddress() {
+    return {
+      'fullName': fullNameController.text.trim(),
+      'phone': phoneController.text.trim(),
+      'city': cityController.text.trim(),
+      'quartier': stateController.text.trim(),
+      'address': addressController.text.trim(),
+      'postal_code': postalCodeController.text.trim().isEmpty
+          ? null
+          : postalCodeController.text.trim(),
+      'country': countryController.text.trim().isEmpty
+          ? null
+          : countryController.text.trim(),
+    };
+  }
+
+  OrderItemModel _buildCustomOrderItem() {
+    final customController = CustomizationController.instance;
+    final measurementController = MeasurementController.instance;
+    final profileId = measurementController.selectedProfile.value?.id;
+
+    final productId = customController.productId.value.isNotEmpty
+        ? customController.productId.value
+        : 'custom_product_id';
+
+    return OrderItemModel(
+      productId: productId,
+      quantity: 1,
+      price: customController.basePrice.value,
+      measurementProfileId: profileId,
+      customizationDetails: {
+        'tissu': customController.fabricName,
+        'etape2': customController.getStep2Name(),
+        'etape3': customController.getStep3Name(),
+        'category': customController.categoryType.value,
+      },
+      measurementSnapshot:
+          measurementController.selectedProfile.value?.toJson(),
+    );
+  }
+
+  List<OrderItemModel> _buildCartOrderItems() {
+    return CartController.instance.items
+        .map((item) => OrderItemModel(
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.price,
+              customizationDetails: const {
+                'type': 'cart',
+              },
+            ))
+        .toList();
+  }
+
+  Map<String, dynamic> _toCheckoutItemPayload(OrderItemModel item) {
+    return {
+      'product_id': item.productId,
+      'quantity': item.quantity,
+      'price': item.price,
+      'measurement_profile_id': item.measurementProfileId,
+      'customization_details': item.customizationDetails,
+      'measurement_snapshot': item.measurementSnapshot,
+    };
+  }
+
+  Future<Map<String, dynamic>> buildCheckoutPayload({
+    required double totalAmount,
+    required bool isCart,
+  }) async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw 'Session expiree. Veuillez vous reconnecter.';
+    }
+
+    if (!validateAddress()) {
+      throw 'Adresse de livraison invalide.';
+    }
+
+    final items = isCart ? _buildCartOrderItems() : [_buildCustomOrderItem()];
+    if (items.isEmpty) {
+      throw 'Aucun article a payer.';
+    }
+
+    final itemTotal = items.fold<double>(
+      0,
+      (sum, item) => sum + (item.price * item.quantity),
+    );
+    final shippingFee = (totalAmount - itemTotal).clamp(0, double.infinity);
+
+    return {
+      'shipping_address': _buildShippingAddress(),
+      'shipping_fee': shippingFee,
+      'payment_method': 'card',
+      'source': isCart ? 'cart' : 'custom',
+      'items': items.map(_toCheckoutItemPayload).toList(),
+    };
+  }
+
+  Future<OrderModel?> confirmStripeOrder({
+    required String paymentIntentId,
+    required bool isCart,
+  }) async {
+    try {
+      isLoading.value = true;
+      final response = await Supabase.instance.client.functions.invoke(
+        'confirm-paid-order',
+        body: {
+          'payment_intent_id': paymentIntentId,
+        },
+      );
+
+      if (response.status >= 400) {
+        final data = response.data;
+        final error = data is Map
+            ? data['error']
+            : data is String
+                ? data
+                : 'Confirmation du paiement impossible.';
+        throw error.toString();
+      }
+
+      final rawData = response.data;
+      final data = rawData is String
+          ? jsonDecode(rawData) as Map<String, dynamic>
+          : Map<String, dynamic>.from(rawData as Map);
+      final orderJson = Map<String, dynamic>.from(data['order'] as Map);
+      final savedOrder = OrderModel.fromJson(orderJson);
+
+      if (isCart) {
+        await CartController.instance.clear();
+      }
+
+      Get.offAll(() => OrderSuccessScreen(order: savedOrder));
+      return savedOrder;
+    } catch (e) {
+      debugPrint('[CHECKOUT] Confirmation Stripe echouee: $e');
+      rethrow;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   Future<OrderModel?> processOrder(double totalAmount) async {
     try {
       isLoading.value = true;
-
-      if (!validateAddress()) return null;
-
       final userId = Supabase.instance.client.auth.currentUser?.id;
+
       if (userId == null) {
-        throw 'Vous devez etre connecte pour passer une commande.';
+        throw 'Session expiree. Veuillez vous reconnecter.';
       }
 
-      final shippingAddress = {
-        'fullName': fullNameController.text,
-        'phone': phoneController.text,
-        'city': cityController.text,
-        'quartier': stateController.text,
-        'address': addressController.text,
-        'postal_code': postalCodeController.text.trim().isEmpty
-            ? null
-            : postalCodeController.text.trim(),
-        'country': countryController.text.trim().isEmpty
-            ? null
-            : countryController.text.trim(),
-      };
-
-      final customController = CustomizationController.instance;
-      final measurementController = MeasurementController.instance;
-      final profileId = measurementController.selectedProfile.value?.id;
-
-      final productId = customController.productId.value.isNotEmpty
-          ? customController.productId.value
-          : 'custom_product_id';
-
-      final item = OrderItemModel(
-        productId: productId,
-        quantity: 1,
-        price: customController.basePrice.value,
-        measurementProfileId: profileId,
-        customizationDetails: {
-          'tissu': customController.fabricName,
-          'etape2': customController.getStep2Name(),
-          'etape3': customController.getStep3Name(),
-          'category': customController.categoryType.value,
-        },
-      );
+      if (!validateAddress()) return null;
 
       final order = OrderModel(
         id: '',
         userId: userId,
         status: 'pending',
-        items: [item],
+        items: [_buildCustomOrderItem()],
         totalAmount: totalAmount,
         orderDate: DateTime.now(),
-        shippingAddress: shippingAddress,
+        paymentMethod: 'mobile',
+        shippingAddress: _buildShippingAddress(),
       );
 
-      debugPrint('?? [CHECKOUT] Sauvegarde de la commande...');
-      final savedOrder = await _orderRepository.saveOrder(order, userId);
-
-      debugPrint('[CHECKOUT] Redirection vers l\'ecran de succes...');
+      final savedOrder =
+          await _orderRepository.saveOrder(order, userId, paymentStatus: 'pending');
       Get.offAll(() => OrderSuccessScreen(order: savedOrder));
-      
       return savedOrder;
     } catch (e) {
-      debugPrint(
-          '?? [CHECKOUT ERROR] Une erreur est survenue lors du traitement : $e');
+      debugPrint('[CHECKOUT ERROR] processOrder: $e');
       rethrow;
     } finally {
       isLoading.value = false;
@@ -199,69 +307,41 @@ class CheckoutController extends GetxController {
   Future<OrderModel?> processCartOrder(double totalAmount) async {
     try {
       isLoading.value = true;
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+
+      if (userId == null) {
+        throw 'Session expiree. Veuillez vous reconnecter.';
+      }
 
       if (!validateAddress()) return null;
-
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) {
-        throw 'Vous devez etre connecte pour passer une commande.';
-      }
 
       final cartController = CartController.instance;
       if (cartController.items.isEmpty) {
         throw 'Votre panier est vide.';
       }
 
-      final shippingAddress = {
-        'fullName': fullNameController.text,
-        'phone': phoneController.text,
-        'city': cityController.text,
-        'quartier': stateController.text,
-        'address': addressController.text,
-        'postal_code': postalCodeController.text.trim().isEmpty
-            ? null
-            : postalCodeController.text.trim(),
-        'country': countryController.text.trim().isEmpty
-            ? null
-            : countryController.text.trim(),
-      };
-
-      final items = cartController.items
-          .map((item) => OrderItemModel(
-                productId: item.productId,
-                quantity: item.quantity,
-                price: item.price,
-                customizationDetails: {
-                  'type': 'cart',
-                },
-              ))
-          .toList();
-
       final order = OrderModel(
         id: '',
         userId: userId,
         status: 'pending',
-        items: items,
+        items: _buildCartOrderItems(),
         totalAmount: totalAmount,
         orderDate: DateTime.now(),
-        shippingAddress: shippingAddress,
+        paymentMethod: 'mobile',
+        shippingAddress: _buildShippingAddress(),
       );
 
-      debugPrint('[CHECKOUT] Sauvegarde de la commande panier...');
-      final savedOrder = await _orderRepository.saveOrder(order, userId);
-
+      final savedOrder =
+          await _orderRepository.saveOrder(order, userId, paymentStatus: 'pending');
       await cartController.clear();
-
-      debugPrint('[CHECKOUT] Redirection vers l\'ecran de succes...');
       Get.offAll(() => OrderSuccessScreen(order: savedOrder));
-      
       return savedOrder;
     } catch (e) {
-      debugPrint(
-          '[CHECKOUT ERROR] Une erreur est survenue lors du traitement : $e');
+      debugPrint('[CHECKOUT ERROR] processCartOrder: $e');
       rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 }
+

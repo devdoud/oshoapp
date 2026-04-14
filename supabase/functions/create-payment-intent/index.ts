@@ -1,83 +1,112 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { computeOrderTotal, validateCheckoutPayload } from "../_shared/orders.ts";
+import { createServiceClient, requireAuthenticatedUser } from "../_shared/supabase.ts";
+
+const zeroDecimalCurrencies = new Set(["bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga", "pyg", "rwf", "ugx", "vnd", "vuv", "xaf", "xof", "xpf"]);
+
+function toStripeAmount(totalAmount: number, currency: string) {
+  return zeroDecimalCurrencies.has(currency.toLowerCase())
+    ? Math.round(totalAmount)
+    : Math.round(totalAmount * 100);
+}
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { amount, currency } = await req.json();
+    const user = await requireAuthenticatedUser(req);
+    const { amount, currency, order_payload } = await req.json();
 
-    // Validation des paramètres
-    if (!amount || !currency) {
-      return new Response(
-        JSON.stringify({ error: 'Missing amount or currency.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    if (typeof amount !== "number" || amount <= 0) {
+      return jsonResponse({ error: "amount must be a positive number." }, { status: 400 });
+    }
+
+    if (typeof currency !== "string" || currency.trim().length !== 3) {
+      return jsonResponse({ error: "currency must be a 3-letter code." }, { status: 400 });
+    }
+
+    const normalizedCurrency = currency.toLowerCase();
+    const payload = validateCheckoutPayload(order_payload);
+    const orderTotal = computeOrderTotal(payload);
+    const expectedAmount = toStripeAmount(orderTotal, normalizedCurrency);
+
+    if (expectedAmount != Math.round(amount)) {
+      return jsonResponse(
+        {
+          error: "Payment amount does not match order payload total.",
+          expected_amount: expectedAmount,
+          received_amount: amount,
+        },
+        { status: 400 },
       );
     }
 
-    // Validation du type de amount
-    if (typeof amount !== 'number' || amount <= 0) {
-      return new Response(
-        JSON.stringify({ error: 'Amount must be a positive number.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
-    }
-
-    // Validation de currency
-    if (typeof currency !== 'string' || currency.length !== 3) {
-      return new Response(
-        JSON.stringify({ error: 'Currency must be a 3-letter code.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
-    }
-
-    const secretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    const secretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!secretKey) {
-      return new Response(
-        JSON.stringify({ error: 'Stripe secret key not configured.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
+      throw new Error("STRIPE_SECRET_KEY is not configured.");
     }
 
+    const attemptId = crypto.randomUUID();
     const body = new URLSearchParams();
-    body.set('amount', Math.round(amount).toString()); // S'assurer que c'est un entier
-    body.set('currency', currency.toLowerCase());
-    body.set('automatic_payment_methods[enabled]', 'true');
+    body.set("amount", String(expectedAmount));
+    body.set("currency", normalizedCurrency);
+    body.set("automatic_payment_methods[enabled]", "true");
+    body.set("metadata[attempt_id]", attemptId);
+    body.set("metadata[user_id]", user.id);
+    body.set("metadata[source]", payload.source ?? "checkout");
 
-    const stripeRes = await fetch('https://api.stripe.com/v1/payment_intents', {
-      method: 'POST',
+    const stripeResponse = await fetch("https://api.stripe.com/v1/payment_intents", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${secretKey}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body,
     });
 
-    const data = await stripeRes.json();
-
-    if (!stripeRes.ok) {
-      console.error('Stripe API error:', data);
-      return new Response(
-        JSON.stringify({ error: data?.error?.message ?? 'Stripe error', details: data }),
-        { status: stripeRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    const stripeData = await stripeResponse.json();
+    if (!stripeResponse.ok) {
+      return jsonResponse(
+        {
+          error: stripeData?.error?.message ?? "Unable to create payment intent.",
+          details: stripeData,
+        },
+        { status: stripeResponse.status },
       );
     }
 
-    return new Response(
-      JSON.stringify(data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    );
-  } catch (err) {
-    console.error('Function error:', err);
-    return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    const supabase = createServiceClient();
+    const { error: insertError } = await supabase.from("payment_attempts").insert({
+      id: attemptId,
+      user_id: user.id,
+      stripe_payment_intent_id: stripeData.id,
+      amount: orderTotal,
+      currency: normalizedCurrency,
+      status: stripeData.status ?? "requires_payment_method",
+      order_payload: payload,
+    });
+
+    if (insertError) {
+      return jsonResponse(
+        { error: `Unable to persist payment attempt: ${insertError.message}` },
+        { status: 500 },
+      );
+    }
+
+    return jsonResponse({
+      id: stripeData.id,
+      client_secret: stripeData.client_secret,
+      payment_attempt_id: attemptId,
+      status: stripeData.status,
+    });
+  } catch (error) {
+    return jsonResponse(
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 },
     );
   }
 });
