@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../features/personalization/models/measurement_profile_model.dart';
@@ -27,7 +28,8 @@ class MeasurementRepository extends GetxController {
         await _supabase.from('measurement_profiles').insert(profile.toJson());
       }
     } catch (e) {
-      throw 'Error saving measurement profile: $e';
+      debugPrint('[MEASUREMENT_REPOSITORY][SAVE] $e');
+      rethrow;
     }
   }
 
@@ -47,7 +49,8 @@ class MeasurementRepository extends GetxController {
           .map((json) => MeasurementProfileModel.fromJson(json))
           .toList();
     } catch (e) {
-      throw 'Error fetching measurements: $e';
+      debugPrint('[MEASUREMENT_REPOSITORY][FETCH] $e');
+      rethrow;
     }
   }
 
@@ -77,7 +80,8 @@ class MeasurementRepository extends GetxController {
     try {
       await _supabase.from('measurement_profiles').delete().eq('id', id);
     } catch (e) {
-      throw 'Error deleting profile: $e';
+      debugPrint('[MEASUREMENT_REPOSITORY][DELETE] $e');
+      rethrow;
     }
   }
 }

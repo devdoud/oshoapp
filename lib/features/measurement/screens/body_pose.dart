@@ -370,7 +370,12 @@ class AutoPoseCaptureView extends StatelessWidget {
                           gender: selectedGender,
                           isPrimary: isPrimary,
                         );
-                        await measurementController.saveMeasurement(profile);
+                        final saved =
+                            await measurementController.saveMeasurement(profile);
+                        if (!saved) {
+                          return;
+                        }
+
                         if (context.mounted) Navigator.of(context).pop();
 
                         // Return to checkout if needed

@@ -54,6 +54,8 @@ dependencies:
   shimmer: ^3.0.0
   supabase_flutter: ^2.12.0
   flutter_dotenv: ^5.2.1
+  video_player: ^2.11.1
+  chewie: ^1.13.1
 
 dev_dependencies:
   flutter_test:
@@ -84,6 +86,7 @@ flutter:
     - assets/icons/
     - assets/images/on_boarding_images/
     - assets/images/measurement/
+    - assets/videos/measurement/
     - assets/images/modelfashion/
     - assets/images/store/
     - .env

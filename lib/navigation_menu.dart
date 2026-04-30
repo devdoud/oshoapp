@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:osho/common/widgets/loaders/loader.dart';
+import 'package:osho/data/repositories/authentication/authentication_repository.dart';
+import 'package:osho/features/authentication/screens/login/login.dart';
 import 'package:osho/features/measurement/screens/body_pose.dart';
 import 'package:osho/features/measurement/screens/measurement_wrapper.dart';
 import 'package:osho/features/measurement/screens/onboarding/measurement_onboarding.dart';
@@ -22,53 +25,66 @@ class NavigationMenu extends StatelessWidget {
 
     return Scaffold(
       bottomNavigationBar: Obx(
-        () => NavigationBar(
-          height: 70,
-          elevation: 0,
-          selectedIndex: controller.selectedIndex.value,
-          backgroundColor: Colors.white,
-          indicatorColor: OColors.primary.withOpacity(0.1),
-          // labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-          onDestinationSelected: (index) => controller.selectedIndex.value = index,
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Iconsax.home), 
-              selectedIcon: const Icon(Iconsax.home5, color: OColors.primary),
-              label: 'nav_home'.tr
-            ),
-            NavigationDestination(
-              icon: _buildCartIcon(cartController, selected: false),
-              selectedIcon: _buildCartIcon(cartController, selected: true),
-              label: 'nav_cart'.tr
-            ),
-            NavigationDestination(
-              icon: const Icon(Iconsax.heart), 
-              selectedIcon: const Icon(Iconsax.heart5, color: OColors.primary),
-              label: 'nav_favorites'.tr
-            ),
-            NavigationDestination(
-              icon: const Icon(Iconsax.scan), 
-              selectedIcon: const Icon(Iconsax.scan5, color: OColors.primary),
-              label: 'nav_measurements'.tr
-            ),
-            NavigationDestination(
-              icon: const Icon(Iconsax.message), 
-              selectedIcon: const Icon(Iconsax.message5, color: OColors.primary),
-              label: 'nav_support'.tr
-            ),
-            NavigationDestination(
-              icon: const Icon(Iconsax.user), 
-              selectedIcon: const Icon(Iconsax.user, color: Colors.black),
-              label: 'nav_profile'.tr
-            ),
-          ],
-        ),
+        () => controller.selectedIndex.value == 3
+            ? const SizedBox.shrink() // Cache la nav bar sur l'onglet Mesure
+            : NavigationBar(
+                height: 70,
+                elevation: 0,
+                selectedIndex: controller.selectedIndex.value,
+                backgroundColor: Colors.white,
+                indicatorColor: OColors.primary.withOpacity(0.1),
+                // labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+                onDestinationSelected: (index) {
+                  if ((index == 1 || index == 2) && AuthenticationRepository.instance.authUser == null) {
+                    OLoaders.warningSnackBar(
+                      title: 'Connexion requise', 
+                      message: 'Veuillez vous connecter pour accéder à cette section.'
+                    );
+                    Get.to(() => const LoginScreen());
+                  } else {
+                    controller.selectedIndex.value = index;
+                  }
+                },
+                destinations: [
+                  NavigationDestination(
+                      icon: const Icon(Iconsax.home),
+                      selectedIcon:
+                          const Icon(Iconsax.home5, color: OColors.primary),
+                      label: 'nav_home'.tr),
+                  NavigationDestination(
+                      icon: _buildCartIcon(cartController, selected: false),
+                      selectedIcon:
+                          _buildCartIcon(cartController, selected: true),
+                      label: 'nav_cart'.tr),
+                  NavigationDestination(
+                      icon: const Icon(Iconsax.heart),
+                      selectedIcon:
+                          const Icon(Iconsax.heart5, color: OColors.primary),
+                      label: 'nav_favorites'.tr),
+                  NavigationDestination(
+                      icon: const Icon(Iconsax.scan),
+                      selectedIcon:
+                          const Icon(Iconsax.scan5, color: OColors.primary),
+                      label: 'nav_measurements'.tr),
+                  // NavigationDestination(
+                  //   icon: const Icon(Iconsax.message),
+                  //   selectedIcon: const Icon(Iconsax.message5, color: OColors.primary),
+                  //   label: 'nav_support'.tr
+                  // ),
+                  NavigationDestination(
+                      icon: const Icon(Iconsax.user),
+                      selectedIcon:
+                          const Icon(Iconsax.user, color: Colors.black),
+                      label: 'nav_profile'.tr),
+                ],
+              ),
       ),
       body: Obx(() => controller.screens[controller.selectedIndex.value]),
     );
   }
 
-  Widget _buildCartIcon(CartController cartController, {required bool selected}) {
+  Widget _buildCartIcon(CartController cartController,
+      {required bool selected}) {
     return Obx(() {
       final count = cartController.totalItems;
       final label = count > 99 ? '99+' : count.toString();
@@ -105,18 +121,17 @@ class NavigationMenu extends StatelessWidget {
       );
     });
   }
-
 }
 
-class NavigationController extends GetxController{
+class NavigationController extends GetxController {
   final Rx<int> selectedIndex = 0.obs;
 
   final screens = [
-    const HomeScreen(), 
+    const HomeScreen(),
     const StoreScreen(),
     const WishlistScreen(),
     const MeasurementWrapper(), // 4. Measurement
-    const SupportChatScreen(), // 5. Support
+    // const SupportChatScreen(), // 5. Support
     const SettingsScreen(), // 6. Profile
   ];
 }

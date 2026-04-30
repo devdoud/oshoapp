@@ -5,7 +5,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:osho/common/widgets/loaders/loader.dart';
 import 'package:osho/features/personalization/controllers/address_controller.dart';
 import 'package:osho/features/personalization/controllers/measurement_controller.dart';
-import 'package:osho/features/measurement/screens/onboarding/measurement_onboarding.dart';
+import 'package:osho/features/measurement/screens/measurement_tutorial.dart';
 import 'package:osho/features/personalization/screens/address/add_new_address.dart';
 import 'package:osho/features/personalization/screens/address/address.dart';
 import 'package:osho/features/shop/screens/checkout/payment.dart';
@@ -166,30 +166,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _showMeasurementPrompt(BuildContext context) {
-    Get.dialog(
-      AlertDialog(
-        title: const Text("Mesures manquantes"),
-        content: const Text(
-            "Voulez-vous prendre vos mesures avec l'IA maintenant pour garantir un vêtement parfaitement ajusté ?"),
-        actions: [
-          TextButton(
-            onPressed: () => Get.to(() => PaymentScreen()),
-            child: const Text("Plus tard (Standard)",
-                style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              Get.to(() => const MeasurementOnboardingScreen(),
-                      arguments: {'returnToCheckout': true})
-                  ?.then((_) =>
-                      MeasurementController.instance.fetchUserMeasurements());
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: OColors.primary),
-            child: const Text("Scanner maintenant"),
-          ),
-        ],
-      ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _MeasurementPromptBottomSheet(),
     );
   }
 
@@ -220,13 +201,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: () =>
-                  Get.to(() => const MeasurementOnboardingScreen()),
+                  Get.to(() => const MeasurementTutorialScreen(
+                        allowBack: true,
+                        returnToCheckout: true,
+                      ))
+                      ?.then((_) => MeasurementController.instance.fetchUserMeasurements()),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: OColors.primary),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Prendre mes mesures (IA)",
+              child: const Text("Prendre mes mesures par IA",
                   style: TextStyle(color: OColors.primary)),
             ),
           ),
@@ -590,3 +575,86 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 }
+
+class _MeasurementPromptBottomSheet extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = OHelperFunctions.isDarkMode(context);
+
+    return Container(
+      padding: const EdgeInsets.all(OSizes.defaultPadding),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(32),
+          topRight: Radius.circular(32),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Icon(Iconsax.frame_1, size: 64, color: OColors.primary),
+          const SizedBox(height: 24),
+          Text(
+            "Mesures pour la confection",
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Pour vous garantir un vêtement parfaitement ajusté, nous vous recommandons de prendre vos mesures avec notre tailleur numérique.",
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Get.back();
+                Get.to(() => const MeasurementTutorialScreen(
+                      allowBack: true,
+                      returnToCheckout: true,
+                    ))?.then((_) {
+                  MeasurementController.instance.fetchUserMeasurements();
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: OColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text("Prendre mes mesures (IA)", 
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () {
+                Get.back();
+                Get.to(() => const PaymentScreen());
+              },
+              child: Text(
+                "Continuer avec des tailles standards",
+                style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+

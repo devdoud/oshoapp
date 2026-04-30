@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:osho/features/measurement/screens/body_pose.dart';
+import 'package:osho/features/personalization/controllers/measurement_controller.dart';
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/sizes.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
 
 import 'package:flutter/services.dart';
-import 'package:get_storage/get_storage.dart';
 
 class MeasurementOnboardingScreen extends StatefulWidget {
   const MeasurementOnboardingScreen({super.key});
@@ -49,21 +48,21 @@ class _MeasurementOnboardingScreenState extends State<MeasurementOnboardingScree
 
     final List<Map<String, dynamic>> slides = [
       {
-        'title': 'onboarding_title_1'.tr,
-        'desc': 'onboarding_desc_1'.tr,
-        'icon': Iconsax.cpu_charge,
+        'title': 'Prenez vos mesures',
+        'desc': 'Apprenez à prendre vos mesures précisément pour une confection parfaite.',
+        'icon': Iconsax.ruler,
         'color': OColors.primary,
       },
       {
-        'title': 'onboarding_title_2'.tr,
-        'desc': 'onboarding_desc_2'.tr,
-        'icon': Iconsax.camera,
+        'title': 'Guide Vidéo',
+        'desc': 'Des tutoriels simples vous guident pas à pas pour chaque partie du corps.',
+        'icon': Iconsax.video_play,
         'color': Colors.blue,
       },
       {
-        'title': 'onboarding_title_3'.tr,
-        'desc': 'onboarding_desc_3'.tr,
-        'icon': Iconsax.security_safe,
+        'title': 'Profil de mesures',
+        'desc': 'Enregistrez votre profil une seule fois et utilisez-le pour toutes vos commandes.',
+        'icon': Iconsax.user_tick,
         'color': Colors.green,
       },
     ];
@@ -227,8 +226,7 @@ class _MeasurementOnboardingScreenState extends State<MeasurementOnboardingScree
                           onPressed: () {
                              HapticFeedback.mediumImpact();
                             if (_currentPage == slides.length - 1) {
-                               GetStorage().write('hasSeenMeasurementOnboarding', true);
-                               Get.off(() => const AutoPoseCaptureView(), arguments: Get.arguments); // Use Get.off to replace
+                               MeasurementController.instance.completeOnboarding();
                             } else {
                                _pageController.nextPage(
                                 duration: const Duration(milliseconds: 500),
@@ -243,8 +241,8 @@ class _MeasurementOnboardingScreenState extends State<MeasurementOnboardingScree
                                 borderRadius: BorderRadius.circular(24)),
                           ),
                           child: Text(
-                             _currentPage == slides.length - 1 ? 'scan_now'.tr : 'next'.tr,
-                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.5)
+                             _currentPage == slides.length - 1 ? "Commencer" : 'next'.tr,
+                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: Colors.white)
                           ),
                         ),
                       ),
@@ -256,8 +254,7 @@ class _MeasurementOnboardingScreenState extends State<MeasurementOnboardingScree
                          opacity: _currentPage == slides.length - 1 ? 0.0 : 1.0,
                          child: TextButton(
                            onPressed: () {
-                             GetStorage().write('hasSeenMeasurementOnboarding', true);
-                             Get.off(() => const AutoPoseCaptureView(), arguments: Get.arguments);
+                             MeasurementController.instance.completeOnboarding();
                            },
                            child: Text('skip'.tr, style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.w600)),
                          ),
@@ -272,4 +269,3 @@ class _MeasurementOnboardingScreenState extends State<MeasurementOnboardingScree
     );
   }
 }
-

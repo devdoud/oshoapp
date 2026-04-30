@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:osho/features/measurement/screens/body_pose.dart';
+import 'package:osho/features/measurement/screens/measurement_profile_display.dart';
+import 'package:osho/features/measurement/screens/measurement_tutorial.dart';
 import 'package:osho/features/measurement/screens/onboarding/measurement_onboarding.dart';
+import 'package:osho/features/personalization/controllers/measurement_controller.dart';
 
 class MeasurementWrapper extends StatelessWidget {
   const MeasurementWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final storage = GetStorage();
-    final bool hasSeenOnboarding = storage.read('hasSeenMeasurementOnboarding') ?? false;
+    final controller = Get.put(MeasurementController());
 
-    if (hasSeenOnboarding) {
-      return const AutoPoseCaptureView();
-    } else {
-      return const MeasurementOnboardingScreen();
-    }
+    return Obx(() {
+      if (!controller.hasSeenOnboarding.value) {
+        return const MeasurementOnboardingScreen();
+      }
+
+      if (controller.isLoading.value) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
+
+      if (controller.userMeasurements.isNotEmpty) {
+        return const MeasurementProfileDisplayScreen();
+      } else {
+        return const MeasurementTutorialScreen();
+      }
+    });
   }
 }
