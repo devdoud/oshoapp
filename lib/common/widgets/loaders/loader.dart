@@ -143,7 +143,29 @@ class _SpinnerPainter extends CustomPainter {
 }
 
 class OLoaders {
+  static String _cleanMessage(String? message) {
+    if (message == null || message.isEmpty) return '';
+    String displayMessage = message;
+
+    // Extract message from format like "ExceptionName(message: The real error, ...)"
+    final messageMatch = RegExp(r'message:\s*([^,}]+)').firstMatch(displayMessage);
+    if (messageMatch != null) {
+      displayMessage = messageMatch.group(1)?.trim() ?? displayMessage;
+    } else if (displayMessage.startsWith('Exception: ')) {
+      displayMessage = displayMessage.replaceFirst('Exception: ', '').trim();
+    }
+
+    // Extract message from format like "[code] message"
+    final bracketMatch = RegExp(r'^\[.*?\]\s*(.*)').firstMatch(displayMessage);
+    if (bracketMatch != null) {
+      displayMessage = bracketMatch.group(1)?.trim() ?? displayMessage;
+    }
+
+    return displayMessage;
+  }
+
   static void warningSnackBar({required String title, String? message}) {
+    final cleanMsg = _cleanMessage(message);
     ScaffoldMessenger.of(Get.context!).showSnackBar(
       SnackBar(
         content: Column(
@@ -153,8 +175,8 @@ class OLoaders {
             Text(title,
                 style: const TextStyle(
                     fontWeight: FontWeight.bold, color: Colors.white)),
-            if (message != null)
-              Text(message, style: const TextStyle(color: Colors.white)),
+            if (cleanMsg.isNotEmpty)
+              Text(cleanMsg, style: const TextStyle(color: Colors.white)),
           ],
         ),
         backgroundColor: Colors.orange,
@@ -168,6 +190,7 @@ class OLoaders {
 
   static void successSnackBar(
       {required String title, String? message, int duration = 3}) {
+    final cleanMsg = _cleanMessage(message);
     ScaffoldMessenger.of(Get.context!).showSnackBar(
       SnackBar(
         content: Column(
@@ -177,8 +200,8 @@ class OLoaders {
             Text(title,
                 style: const TextStyle(
                     fontWeight: FontWeight.bold, color: Colors.white)),
-            if (message != null)
-              Text(message, style: const TextStyle(color: Colors.white)),
+            if (cleanMsg.isNotEmpty)
+              Text(cleanMsg, style: const TextStyle(color: Colors.white)),
           ],
         ),
         backgroundColor: OColors.primary,
@@ -191,6 +214,7 @@ class OLoaders {
   }
 
   static void errorSnackBar({required String title, String? message}) {
+    final cleanMsg = _cleanMessage(message);
     ScaffoldMessenger.of(Get.context!).showSnackBar(
       SnackBar(
         content: Column(
@@ -200,8 +224,8 @@ class OLoaders {
             Text(title,
                 style: const TextStyle(
                     fontWeight: FontWeight.bold, color: Colors.white)),
-            if (message != null)
-              Text(message, style: const TextStyle(color: Colors.white)),
+            if (cleanMsg.isNotEmpty)
+              Text(cleanMsg, style: const TextStyle(color: Colors.white)),
           ],
         ),
         backgroundColor: Colors.red.shade600,

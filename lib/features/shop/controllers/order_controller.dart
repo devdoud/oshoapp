@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:osho/common/widgets/loaders/loader.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:osho/data/repositories/shop/order_repository.dart';
 import 'package:osho/features/shop/models/order_model.dart';
@@ -12,6 +13,8 @@ class OrderController extends GetxController {
   final orders = <OrderModel>[].obs;
   final isLoading = false.obs;
   final errorMessage = ''.obs;
+  final activeOrderActionId = ''.obs;
+  final activeReviewOrderId = ''.obs;
 
   RealtimeChannel? _ordersChannel;
 
@@ -78,6 +81,76 @@ class OrderController extends GetxController {
           },
         )
         .subscribe();
+  }
+
+  void _replaceOrder(OrderModel updatedOrder) {
+    final index = orders.indexWhere((order) => order.id == updatedOrder.id);
+    if (index == -1) {
+      orders.insert(0, updatedOrder);
+      return;
+    }
+
+    orders[index] = updatedOrder;
+  }
+
+  Future<bool> confirmOrderReceived(OrderModel order) async {
+    try {
+      activeOrderActionId.value = order.id;
+      final updatedOrder = await _repo.confirmOrderReceived(order.id);
+      _replaceOrder(updatedOrder);
+      OLoaders.successSnackBar(
+        title: 'Reception confirmee',
+        message: 'La commande a bien ete marquee comme recue.',
+      );
+      return true;
+    } catch (e) {
+      OLoaders.errorSnackBar(
+        title: 'Erreur',
+        message: e.toString(),
+      );
+      return false;
+    } finally {
+      activeOrderActionId.value = '';
+    }
+  }
+
+  Future<bool> submitTailorReview({
+    required OrderModel order,
+    required int rating,
+    String? reviewText,
+  }) async {
+    if (order.primaryTailorId == null || order.primaryTailorId!.isEmpty) {
+      OLoaders.errorSnackBar(
+        title: 'Impossible',
+        message: 'Aucun tailleur associe a cette commande.',
+      );
+      return false;
+    }
+
+    try {
+      activeReviewOrderId.value = order.id;
+      await _repo.submitTailorReview(
+        orderId: order.id,
+        tailorId: order.primaryTailorId!,
+        rating: rating,
+        reviewText: reviewText,
+      );
+      final refreshedOrder = await _repo.fetchUserOrderById(order.id);
+      _replaceOrder(refreshedOrder);
+      OLoaders.successSnackBar(
+        title: 'Merci',
+        message: 'Votre avis a bien ete enregistre.',
+      );
+      return true;
+    } catch (e) {
+      OLoaders.errorSnackBar(
+        title: 'Erreur',
+        message: e.toString(),
+      );
+      return false;
+    } finally {
+      activeReviewOrderId.value = '';
+    }
   }
 
   /// Couleur selon le statut

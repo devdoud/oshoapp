@@ -14,7 +14,7 @@ class OrderRepository extends GetxController {
 
       final response = await _supabase
           .from('orders')
-          .select('*, order_items(*)')
+          .select('*, order_items(*), tailor_reviews(*)')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
@@ -29,7 +29,7 @@ class OrderRepository extends GetxController {
     try {
       final response = await _supabase
           .from('orders')
-          .select('*, order_items(*)')
+          .select('*, order_items(*), tailor_reviews(*)')
           .eq('status', 'pending')
           .order('created_at', ascending: false);
 
@@ -99,6 +99,77 @@ class OrderRepository extends GetxController {
       );
     } catch (e) {
       throw 'Error creating order: $e';
+    }
+  }
+
+  Future<OrderModel> fetchUserOrderById(String orderId) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw 'User not authenticated.';
+      }
+
+      final response = await _supabase
+          .from('orders')
+          .select('*, order_items(*), tailor_reviews(*)')
+          .eq('id', orderId)
+          .eq('user_id', userId)
+          .single();
+
+      return OrderModel.fromJson(Map<String, dynamic>.from(response));
+    } catch (e) {
+      throw 'Error fetching order: $e';
+    }
+  }
+
+  Future<OrderModel> confirmOrderReceived(String orderId) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw 'User not authenticated.';
+      }
+
+      final response = await _supabase
+          .from('orders')
+          .update({
+            'customer_confirmed': true,
+            'customer_received_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', orderId)
+          .eq('user_id', userId)
+          .eq('status', 'delivered')
+          .select('*, order_items(*), tailor_reviews(*)')
+          .single();
+
+      return OrderModel.fromJson(Map<String, dynamic>.from(response));
+    } catch (e) {
+      throw 'Error confirming order receipt: $e';
+    }
+  }
+
+  Future<void> submitTailorReview({
+    required String orderId,
+    required String tailorId,
+    required int rating,
+    String? reviewText,
+  }) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw 'User not authenticated.';
+      }
+
+      await _supabase.from('tailor_reviews').upsert({
+        'order_id': orderId,
+        'tailor_id': tailorId,
+        'customer_id': userId,
+        'rating': rating,
+        'review_text': reviewText?.trim().isEmpty == true
+            ? null
+            : reviewText?.trim(),
+      }, onConflict: 'order_id');
+    } catch (e) {
+      throw 'Error submitting tailor review: $e';
     }
   }
 }

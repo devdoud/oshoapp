@@ -54,14 +54,43 @@ Deno.serve(async (req: Request) => {
     }
 
     const now = new Date().toISOString();
+    if (status === "accepted") {
+      const { data: claimResult, error: claimError } = await supabase.rpc(
+        "claim_order_assignment",
+        {
+          p_assignment_id: assignment.id,
+          p_tailor_id: user.id,
+          p_notes: typeof notes === "string" ? notes : null,
+        },
+      );
+
+      if (claimError) {
+        throw new Error(`Unable to accept assignment: ${claimError.message}`);
+      }
+
+      const claimRow = Array.isArray(claimResult)
+        ? claimResult[0]
+        : claimResult;
+
+      if (!claimRow?.success) {
+        return jsonResponse(
+          { error: claimRow?.message ?? "Order is no longer available." },
+          { status: 409 },
+        );
+      }
+
+      return jsonResponse({
+        success: true,
+        assignment: claimRow.assignment,
+        sibling_pending_deleted: claimRow.deleted_pending_count ?? 0,
+      });
+    }
+
     const updates: Record<string, unknown> = {
       status,
       notes: typeof notes === "string" ? notes : null,
     };
 
-    if (status === "accepted") {
-      updates.accepted_at = now;
-    }
     if (status === "in_progress") {
       updates.started_at = now;
     }
@@ -78,31 +107,6 @@ Deno.serve(async (req: Request) => {
 
     if (updateError) {
       throw new Error(`Unable to update assignment: ${updateError.message}`);
-    }
-
-    if (status === "accepted") {
-      const { error: cancelOthersError } = await supabase
-        .from("order_assignments")
-        .update({ status: "cancelled" })
-        .eq("order_id", assignment.order_id)
-        .neq("id", assignment.id)
-        .eq("status", "pending");
-
-      if (cancelOthersError) {
-        throw new Error(`Unable to cancel sibling assignments: ${cancelOthersError.message}`);
-      }
-
-      const { error: orderError } = await supabase
-        .from("orders")
-        .update({
-          status: "processing",
-          primary_tailor_id: user.id,
-        })
-        .eq("id", assignment.order_id);
-
-      if (orderError) {
-        throw new Error(`Unable to update order after acceptance: ${orderError.message}`);
-      }
     }
 
     if (status === "in_progress") {

@@ -105,8 +105,8 @@ class UserAddressScreen extends StatelessWidget {
             children: const [
               Icon(Iconsax.add, color: Colors.white),
               SizedBox(width: 8),
-              Text("Ajouter une nouvelle adresse",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text("Nouvelle adresse",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: OColors.white)),
             ],
           ),
         ),

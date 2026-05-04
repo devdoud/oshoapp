@@ -23,7 +23,7 @@ class OnBoardingDotNavigation extends StatelessWidget {
         effect: ExpandingDotsEffect(
           dotHeight: 4,
           activeDotColor: OColors.white,
-          dotColor: Colors.grey,
+          dotColor: Colors.white38,
       ),
       )
     );

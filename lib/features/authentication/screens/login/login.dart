@@ -16,26 +16,50 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = OHelperFunctions.isDarkMode(context);
+    final backgroundColor =
+        dark ? const Color(0xFF090B0F) : const Color(0xFFFAF6F0);
+    final panelColor = dark ? const Color(0xFF111419) : Colors.white;
 
     return Scaffold(
+      backgroundColor: backgroundColor,
       body: SingleChildScrollView(
         child: Padding(
           padding: OSpacingStyle.paddingWithAppBarHeight,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// Headline Title
               OLoginHeader(dark: dark),
-              /// Form
-              OLoginForm(dark: dark),
-              const SizedBox(height: OSizes.spaceBtwSections / 2),
-              /// Divider 
-              OFormDivider(dividertext: OText.or,),
-              const SizedBox(height: OSizes.spaceBtwInputFields / 2,),
-              /// Footer 
-              OSocialButon(dark: dark)
+              const SizedBox(height: OSizes.spaceBtwSections),
+              Container(
+                padding: const EdgeInsets.all(OSizes.defaultPadding),
+                decoration: BoxDecoration(
+                  color: panelColor,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: dark
+                        ? Colors.white.withOpacity(0.06)
+                        : Colors.black.withOpacity(0.05),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(dark ? 0.18 : 0.06),
+                      blurRadius: 24,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    OLoginForm(dark: dark),
+                    const SizedBox(height: OSizes.spaceBtwSections / 2),
+                    const OFormDivider(dividertext: OText.or),
+                    const SizedBox(height: OSizes.spaceBtwInputFields / 2),
+                    OSocialButon(dark: dark),
+                  ],
+                ),
+              ),
             ],
           ),
-                  
         ),
       ),
     );

@@ -16,6 +16,10 @@ class OTermsAndConditionChackbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = SignupController.instance;
+    final baseStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: dark ? Colors.white70 : OColors.grey2,
+        );
+
     return Row(
       children: [
         SizedBox(width: 24, height: 24, child:  Obx(() => Checkbox(
@@ -25,24 +29,33 @@ class OTermsAndConditionChackbox extends StatelessWidget {
         )
         ),
         const SizedBox(width: OSizes.sm,),
-        Text.rich(
-          softWrap: true,
+        Expanded(
+          child: Text.rich(
+            softWrap: true,
             TextSpan(
-          children: [
-            TextSpan(text: '${OText.iAgreeTo} ', style: Theme.of(context).textTheme.bodySmall),
-            TextSpan(text: '${OText.privacyPolicy}', style: Theme.of(context).textTheme.bodySmall!.apply(
-              color: dark ? OColors.white : OColors.primary,
-              decoration: TextDecoration.underline,
-              decorationColor: dark ? OColors.white : OColors.primary,
-            )),
-            TextSpan(text: '${OText.and} ', style: Theme.of(context).textTheme.bodySmall),
-            TextSpan(text: OText.termsOfUse, style: Theme.of(context).textTheme.bodySmall!.apply(
-              color: dark ? OColors.white : OColors.primary,
-              decoration: TextDecoration.underline,
-              decorationColor: dark ? OColors.white : OColors.primary,
-            )),
-          ]
-        ))
+              children: [
+                TextSpan(text: '${OText.iAgreeTo} ', style: baseStyle),
+                TextSpan(
+                  text: OText.privacyPolicy,
+                  style: Theme.of(context).textTheme.bodySmall!.apply(
+                    color: dark ? OColors.white : OColors.primary,
+                    decoration: TextDecoration.underline,
+                    decorationColor: dark ? OColors.white : OColors.primary,
+                  ),
+                ),
+                TextSpan(text: '${OText.and} ', style: baseStyle),
+                TextSpan(
+                  text: OText.termsOfUse,
+                  style: Theme.of(context).textTheme.bodySmall!.apply(
+                    color: dark ? OColors.white : OColors.primary,
+                    decoration: TextDecoration.underline,
+                    decorationColor: dark ? OColors.white : OColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
       ],
     );
   }

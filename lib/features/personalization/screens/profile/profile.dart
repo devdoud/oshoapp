@@ -105,7 +105,7 @@ class ProfileScreen extends StatelessWidget {
                     elevation: 5,
                     shadowColor: OColors.primary.withOpacity(0.4),
                   ),
-                  child: const Text("Enregistrer les modifications"),
+                  child: Text("Enregistrer", style: TextStyle(color: OColors.white)),
                 ),
               )
             ],

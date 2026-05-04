@@ -21,6 +21,7 @@ class OSignupForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(SignupController());
+    final helperColor = dark ? Colors.white70 : OColors.grey2;
     return Form(
       key: controller.signupFormKey,
         child: Column(
@@ -30,8 +31,8 @@ class OSignupForm extends StatelessWidget {
         Text(
           OText.signupSubTitle,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: dark ? OColors.white : OColors.textprimary,
-                fontSize: 18,
+                color: helperColor,
+                fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
           textAlign: TextAlign.left,
@@ -48,19 +49,8 @@ class OSignupForm extends StatelessWidget {
               expands: false,
               decoration: InputDecoration(
                 labelText: OText.firstName,
-                prefixIcon: const Icon(Iconsax.user,
-                    color: OColors.grey, size: 12),
-                labelStyle: TextStyle(
-                    color: dark ? Colors.white : OColors.grey,
-                    fontSize: 12
-                ),
-                // border: const OutlineInputBorder(),
-                // focusedBorder: OutlineInputBorder(
-                //   borderSide: BorderSide(color: dark ? Colors.white : Colors.black),
-                // ),
-                border: InputBorder.none,
-                filled: true,
-                fillColor: OColors.textFieldBackground,
+                hintText: 'Prenom',
+                prefixIcon: const Icon(Iconsax.user, size: 16),
               ),
             )),
             const SizedBox(width: OSizes.spaceBtwInputFields,),
@@ -71,19 +61,8 @@ class OSignupForm extends StatelessWidget {
                   expands: false,
                   decoration: InputDecoration(
                     labelText: OText.lastName,
-                    prefixIcon: const Icon(Iconsax.user,
-                        color: OColors.grey, size: 12),
-                    labelStyle: TextStyle(
-                        color: dark ? Colors.white : OColors.grey,
-                        fontSize: 12,
-                      ),
-                    // border: const OutlineInputBorder(),
-                    // focusedBorder: OutlineInputBorder(
-                    //   borderSide: BorderSide(color: dark ? Colors.white : Colors.black),
-                    // ),
-                    border: InputBorder.none,
-                    filled: true,
-                    fillColor: OColors.textFieldBackground,
+                    hintText: 'Nom',
+                    prefixIcon: const Icon(Iconsax.user, size: 16),
                   ),
                 )),
           ],
@@ -100,19 +79,8 @@ class OSignupForm extends StatelessWidget {
           expands: false,
           decoration: InputDecoration(
             labelText: OText.email,
-            prefixIcon: const Icon(Iconsax.direct,
-                color: OColors.grey, size: 12),
-            labelStyle: TextStyle(
-                color: dark ? Colors.white : OColors.grey,
-                fontSize: 12
-            ),
-            // border: const OutlineInputBorder(),
-            // focusedBorder: OutlineInputBorder(
-            //   borderSide: BorderSide(color: dark ? Colors.white : Colors.black),
-            // ),
-            border: InputBorder.none,
-            filled: true,
-            fillColor: OColors.textFieldBackground,
+            hintText: 'exemple@email.com',
+            prefixIcon: const Icon(Iconsax.direct, size: 16),
           ),
         ),
         const SizedBox(
@@ -125,19 +93,8 @@ class OSignupForm extends StatelessWidget {
           expands: false,
           decoration: InputDecoration(
             labelText: OText.phone,
-            prefixIcon: const Icon(Iconsax.call,
-                color: OColors.grey, size: 12),
-            labelStyle: TextStyle(
-                color: dark ? Colors.white : OColors.grey,
-                fontSize: 12
-            ),
-            // border: const OutlineInputBorder(),
-            // focusedBorder: OutlineInputBorder(
-            //   borderSide: BorderSide(color: dark ? Colors.white : Colors.black),
-            // ),
-            border: InputBorder.none,
-            filled: true,
-            fillColor: OColors.textFieldBackground,
+            hintText: '+234...',
+            prefixIcon: const Icon(Iconsax.call, size: 16),
           ),
         ),
         const SizedBox(
@@ -151,25 +108,15 @@ class OSignupForm extends StatelessWidget {
             validator: (value) => OValidator.validatePassword(value),
             obscureText: controller.hidePassword.value,
             decoration: InputDecoration(
-                prefixIcon: const Icon(Iconsax.lock, color: OColors.grey, size: 14),
+                prefixIcon: const Icon(Iconsax.lock, size: 16),
                 labelText: OText.password,
-                labelStyle: TextStyle(
-                    color: dark ? Colors.white : OColors.grey,
-                    fontSize: 12
-                ),
-                // border: const OutlineInputBorder(),
-                // focusedBorder: OutlineInputBorder(
-                //   borderSide: BorderSide(color: dark ? Colors.white : Colors.black),
-                // ),
-                border: InputBorder.none,
+                hintText: 'Minimum 6 caracteres',
                 suffixIcon: IconButton(
                   onPressed: () {
                     controller.hidePassword.value = !controller.hidePassword.value;
                   },
                   icon: const Icon(Iconsax.eye_slash, color: OColors.primary, size: 18)
-                ),
-                filled: true,
-                fillColor: OColors.textFieldBackground
+                )
             ),
           ),
         ),
@@ -188,9 +135,9 @@ class OSignupForm extends StatelessWidget {
               onPressed: () => controller.signup(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: OColors.primary,
-                foregroundColor: OColors.textprimary,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                 ),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
               textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: OColors.white),

@@ -58,11 +58,11 @@ class OValidator {
       return 'Phone Number is required';
     }
 
-    // Regular Expression for phone number validation (assuming a 10 digit US phone number format)
-    final phoneRegExp = RegExp(r'^\d{10}$');
+    // Regular Expression for international phone number (E.164 format: +1 to +999 followed by 7-14 digits)
+    final phoneRegExp = RegExp(r'^\+?\d{7,15}$');
 
     if (!phoneRegExp.hasMatch(value)) {
-      return 'Invalid phone number format (10 digits required)';
+      return 'Invalid phone number format (7-15 digits required, optionally starting with +)';
     }
 
     return null;

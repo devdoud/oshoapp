@@ -40,6 +40,31 @@ interface OrderRow {
   shipping_address: Record<string, unknown> | null;
   created_at: string;
   payment_method?: string | null;
+  primary_tailor_id?: string | null;
+}
+
+const DEFAULT_TAILOR_NOTIFICATION_BATCH_SIZE = 5;
+
+function pickBatchSize() {
+  const rawValue = Deno.env.get("TAILOR_NOTIFICATION_BATCH_SIZE");
+  const parsed = rawValue ? Number(rawValue) : DEFAULT_TAILOR_NOTIFICATION_BATCH_SIZE;
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_TAILOR_NOTIFICATION_BATCH_SIZE;
+  }
+
+  return Math.floor(parsed);
+}
+
+function shuffleArray<T>(items: T[]) {
+  const copy = [...items];
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+
+  return copy;
 }
 
 function asRecord(value: unknown, fieldName: string): Record<string, unknown> {
@@ -248,12 +273,24 @@ export async function notifyTailorsForOrder(
 ) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, user_id, total_amount, status, created_at, shipping_address")
+    .select(
+      "id, user_id, total_amount, status, created_at, shipping_address, primary_tailor_id",
+    )
     .eq("id", orderId)
     .single<OrderRow>();
 
   if (orderError || !order) {
     throw new Error(`Unable to find order ${orderId} for notification.`);
+  }
+
+  if (order.primary_tailor_id && !options.force) {
+    return {
+      success: true,
+      order_id: orderId,
+      already_assigned: true,
+      notifications_sent: 0,
+      results: [],
+    };
   }
 
   const { data: attempt } = await supabase
@@ -291,20 +328,6 @@ export async function notifyTailorsForOrder(
     };
   }
 
-  const assignments = tailors.map((tailor) => ({
-    order_id: orderId,
-    tailor_id: tailor.id,
-    status: "pending",
-  }));
-
-  const { error: assignError } = await supabase
-    .from("order_assignments")
-    .upsert(assignments, { onConflict: "order_id,tailor_id" });
-
-  if (assignError) {
-    throw new Error(`Unable to create assignments: ${assignError.message}`);
-  }
-
   const { data: tailorTokens, error: tokenError } = await supabase
     .from("tailor_tokens")
     .select("token, tailor_id")
@@ -323,6 +346,77 @@ export async function notifyTailorsForOrder(
       message: "No registered FCM tokens for tailors.",
     };
   }
+
+  const candidateTailorIds = [...new Set(
+    tailorTokens.map((item) => item.tailor_id).filter((value): value is string =>
+      typeof value === "string" && value.length > 0
+    ),
+  )];
+
+  if (candidateTailorIds.length === 0) {
+    return {
+      success: true,
+      order_id: orderId,
+      notifications_sent: 0,
+      results: [],
+      message: "No valid tailor IDs attached to push tokens.",
+    };
+  }
+
+  const { data: busyAssignments, error: busyAssignmentsError } = await supabase
+    .from("order_assignments")
+    .select("tailor_id")
+    .in("tailor_id", candidateTailorIds)
+    .in("status", ["accepted", "in_progress"]);
+
+  if (busyAssignmentsError) {
+    throw new Error(
+      `Unable to load active tailor assignments: ${busyAssignmentsError.message}`,
+    );
+  }
+
+  const busyTailorIds = new Set(
+    (busyAssignments ?? [])
+      .map((assignment) => assignment.tailor_id)
+      .filter((value): value is string => typeof value === "string" && value.length > 0),
+  );
+
+  const availableTailorIds = candidateTailorIds.filter((tailorId) =>
+    !busyTailorIds.has(tailorId)
+  );
+
+  if (availableTailorIds.length === 0) {
+    return {
+      success: true,
+      order_id: orderId,
+      notifications_sent: 0,
+      results: [],
+      message: "No available tailors found for this order.",
+    };
+  }
+
+  const selectedTailorIds = shuffleArray(availableTailorIds).slice(
+    0,
+    pickBatchSize(),
+  );
+
+  const assignments = selectedTailorIds.map((tailorId) => ({
+    order_id: orderId,
+    tailor_id: tailorId,
+    status: "pending",
+  }));
+
+  const { error: assignError } = await supabase
+    .from("order_assignments")
+    .upsert(assignments, { onConflict: "order_id,tailor_id" });
+
+  if (assignError) {
+    throw new Error(`Unable to create assignments: ${assignError.message}`);
+  }
+
+  const selectedTokenRows = tailorTokens.filter((tokenRow) =>
+    selectedTailorIds.includes(tokenRow.tailor_id)
+  );
 
   const { data: orderItems, error: itemsError } = await supabase
     .from("order_items")
@@ -343,7 +437,7 @@ export async function notifyTailorsForOrder(
   const accessToken = await getGoogleAccessToken();
   const results: Array<Record<string, unknown>> = [];
 
-  for (const tailorToken of tailorTokens) {
+  for (const tailorToken of selectedTokenRows) {
     try {
       const response = await fetch(
         `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
@@ -423,6 +517,9 @@ export async function notifyTailorsForOrder(
   return {
     success: true,
     order_id: orderId,
+    candidate_tailors: candidateTailorIds.length,
+    available_tailors: availableTailorIds.length,
+    selected_tailors: selectedTailorIds.length,
     notifications_sent: sentCount,
     results,
   };

@@ -24,11 +24,12 @@ class OLoginForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(LoginController());
+    final helperColor = dark ? Colors.white70 : OColors.grey2;
     
     return Form(
       key: controller.loginFormKey,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: OSizes.spaceBtwSections),
+        padding: const EdgeInsets.symmetric(vertical: OSizes.spaceBtwItems),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -36,8 +37,8 @@ class OLoginForm extends StatelessWidget {
             Text(
               OText.loginSubTitle,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: dark ? OColors.white : OColors.textprimary,
-                fontSize: 18,
+                color: helperColor,
+                fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.left,
@@ -49,15 +50,8 @@ class OLoginForm extends StatelessWidget {
               validator: (value) => OValidator.validateEmail(value),
               decoration: InputDecoration(
                 labelText: OText.email,
-                prefixIcon: const Icon(Iconsax.user, color: OColors.grey, size: 18),
-                labelStyle: TextStyle(color: dark ? Colors.white : OColors.grey),
-                // border: const OutlineInputBorder(),
-                // focusedBorder: OutlineInputBorder(
-                //   borderSide: BorderSide(color: dark ? Colors.white : Colors.black),
-                // ),
-                border: InputBorder.none,
-                filled: true,
-                fillColor: OColors.textFieldBackground ,
+                hintText: 'exemple@email.com',
+                prefixIcon: const Icon(Iconsax.user, size: 18),
               ),
             ),
             const SizedBox(height: OSizes.spaceBtwInputFields,),
@@ -69,25 +63,15 @@ class OLoginForm extends StatelessWidget {
                 validator: (value) => OValidator.validatePassword(value),
                 obscureText: controller.hidePassword.value,
                 decoration: InputDecoration(
-                    prefixIcon: const Icon(Iconsax.lock, color: OColors.grey, size: 14),
+                    prefixIcon: const Icon(Iconsax.lock, size: 16),
                     labelText: OText.password,
-                    labelStyle: TextStyle(
-                        color: dark ? Colors.white : OColors.grey,
-                        fontSize: 12
-                    ),
-                    // border: const OutlineInputBorder(),
-                    // focusedBorder: OutlineInputBorder(
-                    //   borderSide: BorderSide(color: dark ? Colors.white : Colors.black),
-                    // ),
-                    border: InputBorder.none,
+                    hintText: 'Votre mot de passe',
                     suffixIcon: IconButton(
                       onPressed: () {
                         controller.hidePassword.value = !controller.hidePassword.value;
                       },
                       icon: const Icon(Iconsax.eye_slash, color: OColors.primary, size: 18)
                     ),
-                    filled: true,
-                    fillColor: OColors.textFieldBackground
                 ),
               ),
             ),
@@ -95,7 +79,6 @@ class OLoginForm extends StatelessWidget {
 
             /// Remember me & Forgot Password
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 /// Remember me
                 Row(
@@ -105,35 +88,37 @@ class OLoginForm extends StatelessWidget {
                     Text(
                       OText.rememberMe,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: dark ? OColors.white : OColors.grey,
-                      fontSize: 14,
+                      color: helperColor,
+                      fontSize: 12,
                       fontWeight:FontWeight.w400,
                     ),
                     ),
                   ],
                 ),
 
-                /// Forget Paqqword
+                const Spacer(),
+
+                /// Forget Password
                 TextButton(onPressed: () => Get.to( () => const ForgetPassword() ),
                 child:  Text(
                   OText.forgotPassword,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: dark ? OColors.white : OColors.primary,
-                    fontSize: 12,
-                    fontWeight:FontWeight.w500,
+                    color: dark ? Colors.white : OColors.primary,
+                    fontSize: 11,
+                    fontWeight:FontWeight.w600,
                   ),
                 )),
               ],
             ),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+            Wrap(
+              alignment: WrapAlignment.start,
               children: [
                 Text(
                   OText.noCompte,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: dark ? OColors.white : OColors.grey,
-                    fontSize: 14,
+                    color: helperColor,
+                    fontSize: 12,
                     fontWeight:FontWeight.w400,
                   ),
                 ),
@@ -144,6 +129,11 @@ class OLoginForm extends StatelessWidget {
                 TextButton(
                   onPressed: () => Get.to(() => SignupScreen()), child: Text(
                   OText.createAccount,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: dark ? Colors.white : OColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 )
                 )
               ],
@@ -156,9 +146,9 @@ class OLoginForm extends StatelessWidget {
               onPressed: () => controller.emailAndPasswordSignIn(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: OColors.primary,
-                foregroundColor: OColors.textprimary,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
                 textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: OColors.white),
@@ -182,7 +172,7 @@ class OLoginForm extends StatelessWidget {
                 child: Text(
                   OText.continueAsGuest,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: dark ? OColors.white : OColors.primary,
+                    color: dark ? Colors.white70 : OColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

@@ -17,6 +17,14 @@ class OnBoardingSkip extends StatelessWidget {
         onPressed: () {
           OnBoardingController.instance.skipPage();
         },
+        style: TextButton.styleFrom(
+          backgroundColor: Colors.black.withOpacity(0.28),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+            side: BorderSide(color: Colors.white.withOpacity(0.12)),
+          ),
+        ),
         child: Text(
           'Skip',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
