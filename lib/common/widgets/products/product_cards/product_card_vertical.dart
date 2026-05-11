@@ -7,6 +7,7 @@ import 'package:osho/features/shop/screens/product_details/product_detail.dart';
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/common/widgets/loaders/skeleton.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
+import 'package:osho/utils/helpers/logistics_calculator.dart';
 
 class OProductCardVertical extends StatelessWidget {
   const OProductCardVertical({super.key, required this.product});
@@ -131,13 +132,13 @@ class OProductCardVertical extends StatelessWidget {
                       // Price
                       Flexible(
                         child: Text(
-                          "${product.price.toStringAsFixed(0)} F",
+                          "${OLogisticsCalculator.formatAmount(product.price)} F",
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context)
                               .textTheme
                               .titleMedium!
                               .copyWith(
-                                  color: OColors.primary,
+                                  color: dark ? Colors.white : OColors.primary,
                                   fontWeight: FontWeight.w800,
                                   fontSize: 15),
                         ),
@@ -146,12 +147,15 @@ class OProductCardVertical extends StatelessWidget {
                       // Add to Cart
                       Container(
                         decoration: BoxDecoration(
-                          color: OColors.primary.withOpacity(0.1),
+                          color: dark
+                              ? Colors.white.withValues(alpha: 0.12)
+                              : OColors.primary.withValues(alpha: 0.10),
                           shape: BoxShape.circle,
                         ),
                         padding: const EdgeInsets.all(4),
-                        child: const Icon(Iconsax.add,
-                            color: OColors.primary, size: 20),
+                        child: Icon(Iconsax.add,
+                            color: dark ? Colors.white : OColors.primary,
+                            size: 20),
                       )
                     ],
                   ),

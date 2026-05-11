@@ -5,12 +5,17 @@ class CartItemModel {
   final String image;
   int quantity;
 
+  /// Spécifications fixes du produit (tissu, broderie, accessoire)
+  /// Renseignées automatiquement depuis le ProductModel au moment de l'ajout.
+  final Map<String, dynamic>? customizationDetails;
+
   CartItemModel({
     required this.productId,
     required this.title,
     required this.price,
     required this.image,
     this.quantity = 1,
+    this.customizationDetails,
   });
 
   double get lineTotal => price * quantity;
@@ -21,6 +26,7 @@ class CartItemModel {
     double? price,
     String? image,
     int? quantity,
+    Map<String, dynamic>? customizationDetails,
   }) {
     return CartItemModel(
       productId: productId ?? this.productId,
@@ -28,6 +34,7 @@ class CartItemModel {
       price: price ?? this.price,
       image: image ?? this.image,
       quantity: quantity ?? this.quantity,
+      customizationDetails: customizationDetails ?? this.customizationDetails,
     );
   }
 
@@ -38,6 +45,7 @@ class CartItemModel {
       'price': price,
       'image': image,
       'quantity': quantity,
+      'customization_details': customizationDetails,
     };
   }
 
@@ -49,6 +57,7 @@ class CartItemModel {
       'price': price,
       'image': image,
       'quantity': quantity,
+      'customization_details': customizationDetails,
     };
   }
 
@@ -59,6 +68,9 @@ class CartItemModel {
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       image: json['image'] ?? '',
       quantity: json['quantity'] ?? 1,
+      customizationDetails: json['customization_details'] != null
+          ? Map<String, dynamic>.from(json['customization_details'] as Map)
+          : null,
     );
   }
 
@@ -69,6 +81,9 @@ class CartItemModel {
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       image: json['image'] ?? '',
       quantity: json['quantity'] ?? 1,
+      customizationDetails: json['customization_details'] != null
+          ? Map<String, dynamic>.from(json['customization_details'] as Map)
+          : null,
     );
   }
 }

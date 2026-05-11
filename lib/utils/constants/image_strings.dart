@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 // This class contain all the app images in string formats
 class OImages {
   // -- App Logos
-  static const String darkAppLogo = "assets/logos/logo_osho_dark.jpg";
-  static const String lightAppLogo = "assets/logos/logo_osho_light.jpg";
+  static const String darkAppLogo = "assets/logos/logo_osho_dark.png";
+  static const String lightAppLogo = "assets/logos/logo_osho_light.png";
   static const String logo = "assets/logos/logo.jpg";
 
   // -- Social Logos

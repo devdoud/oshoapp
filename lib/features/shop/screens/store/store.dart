@@ -10,6 +10,7 @@ import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/image_strings.dart';
 import 'package:osho/utils/constants/sizes.dart';
 import 'package:osho/utils/constants/text_strings.dart';
+import 'package:osho/utils/helpers/logistics_calculator.dart';
 
 class StoreScreen extends StatelessWidget {
   const StoreScreen({super.key});
@@ -17,7 +18,6 @@ class StoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cartController = Get.put(CartController());
-    const shippingFee = 2000.0;
 
     return Scaffold(
       appBar: OAppBar(
@@ -95,6 +95,13 @@ class StoreScreen extends StatelessWidget {
           );
         }
 
+        final itemCount = cartController.items.fold<int>(
+          0,
+          (sum, item) => sum + item.quantity,
+        );
+        final logisticsRate =
+            OLogisticsCalculator.quoteForCountry('Benin', itemCount: itemCount);
+        final shippingFee = logisticsRate.fee;
         final subtotal = cartController.subtotal;
         final total = subtotal + shippingFee;
 
@@ -113,15 +120,12 @@ class StoreScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 24),
-              _buildSummaryCard(subtotal, shippingFee, total),
+              _buildSummaryCard(subtotal, logisticsRate, total),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Get.to(() => CartCheckoutScreen(
-                        totalAmount: total,
-                        shippingFee: shippingFee,
-                      )),
+                  onPressed: () => Get.to(() => const CartCheckoutScreen()),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: OColors.primary,
                     foregroundColor: Colors.white,
@@ -131,7 +135,7 @@ class StoreScreen extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: const Text(
-                    "Continuer vers le paiement",
+                    "Valider le panier",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -159,7 +163,7 @@ class StoreScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 6),
           )
@@ -197,9 +201,14 @@ class StoreScreen extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                // Affichage des spécifications produit (tissu, broderie, accessoire)
+                if (item.customizationDetails != null) ...[
+                  const SizedBox(height: 5),
+                  _buildCartItemSpecs(item.customizationDetails!),
+                ],
                 const SizedBox(height: 6),
                 Text(
-                  "${item.price.toStringAsFixed(0)} FCFA",
+                  OLogisticsCalculator.formatFee(item.price),
                   style: const TextStyle(
                     color: OColors.primary,
                     fontWeight: FontWeight.bold,
@@ -235,7 +244,8 @@ class StoreScreen extends StatelessWidget {
                 ],
               ),
               IconButton(
-                onPressed: () async => await controller.removeItem(item.productId),
+                onPressed: () async =>
+                    await controller.removeItem(item.productId),
                 icon: const Icon(Iconsax.trash, color: Colors.red, size: 18),
               )
             ],
@@ -260,7 +270,47 @@ class StoreScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(double subtotal, double shippingFee, double total) {
+  /// Affiche les specs produit (tissu, broderie, accessoire) sous forme de chips
+  Widget _buildCartItemSpecs(Map<String, dynamic> details) {
+    final specs = <String>[];
+    if (details['tissu'] != null && details['tissu'].toString().isNotEmpty) {
+      specs.add(details['tissu'].toString());
+    }
+    if (details['broderie'] != null &&
+        details['broderie'].toString().isNotEmpty) {
+      specs.add(details['broderie'].toString());
+    }
+    if (details['accessoire'] != null &&
+        details['accessoire'].toString().isNotEmpty) {
+      specs.add(details['accessoire'].toString());
+    }
+    if (specs.isEmpty) return const SizedBox.shrink();
+
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: specs
+          .map((spec) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: OColors.primary.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  spec,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: OColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ))
+          .toList(),
+    );
+  }
+
+  Widget _buildSummaryCard(
+      double subtotal, LogisticsRate logisticsRate, double total) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -268,7 +318,7 @@ class StoreScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 6),
           )
@@ -276,11 +326,25 @@ class StoreScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _summaryRow('Sous-total', "${subtotal.toStringAsFixed(0)} FCFA"),
+          _summaryRow('Sous-total', OLogisticsCalculator.formatFee(subtotal)),
           const SizedBox(height: 8),
-          _summaryRow('Livraison', "${shippingFee.toStringAsFixed(0)} FCFA"),
+          _summaryRow('Livraison (${logisticsRate.weightLabel})',
+              OLogisticsCalculator.formatFee(logisticsRate.fee)),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(Iconsax.airplane, size: 14, color: Colors.grey[500]),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Estimation Benin. Le pays au checkout peut ajuster ce tarif.',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                ),
+              ),
+            ],
+          ),
           const Divider(height: 24),
-          _summaryRow('Total', "${total.toStringAsFixed(0)} FCFA",
+          _summaryRow('Total', OLogisticsCalculator.formatFee(total),
               isTotal: true),
         ],
       ),

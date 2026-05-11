@@ -70,15 +70,18 @@ class StripeController extends GetxController {
       debugPrint(
         '[STRIPE ERROR] Code: ${e.error.code}, Message: ${e.error.localizedMessage}',
       );
-      if (e.error.code != FailureCode.Canceled) {
-        OLoaders.errorSnackBar(
-          title: 'Paiement echoue',
-          message: e.error.localizedMessage ?? 'Erreur Stripe',
-        );
-      }
+      if (e.error.code == FailureCode.Canceled) return;
+      final isNetwork = e.error.code == FailureCode.Failed;
+      OLoaders.errorSnackBar(
+        title: 'Paiement non abouti',
+        message: isNetwork
+            ? 'Vérifiez votre connexion internet et réessayez.'
+            : 'Le paiement a échoué. Veuillez réessayer.',
+      );
     } catch (e) {
       debugPrint('[GENERAL ERROR] Une erreur est survenue: $e');
-      OLoaders.errorSnackBar(title: 'Erreur', message: e.toString());
+      final msg = e is String ? e : 'Une erreur est survenue. Veuillez réessayer.';
+      OLoaders.errorSnackBar(title: 'Erreur', message: msg);
     } finally {
       checkoutController.isLoading.value = false;
       debugPrint('[STRIPE] Fin du processus.');

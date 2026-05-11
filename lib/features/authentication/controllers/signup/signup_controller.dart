@@ -94,7 +94,7 @@ class SignupController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 300));
 
       // Show error to the user
-      OLoaders.errorSnackBar(title: 'Oh Snap!', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Inscription échouée', message: e is String ? e : 'Une erreur est survenue. Veuillez réessayer.');
     }
   }
 }

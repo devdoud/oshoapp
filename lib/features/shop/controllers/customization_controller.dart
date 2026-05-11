@@ -27,6 +27,30 @@ class CustomizationController extends GetxController {
   final productImage = ''.obs;
   final basePrice = 0.0.obs;
 
+  // --- Standard size (when user skips Sur Mesure flow) ---
+  final standardTopSize = ''.obs;
+  final standardBottomSize = ''.obs;
+  final sizeRecipientName = ''.obs;
+
+  // --- Partner 2 (couple orders only) ---
+  final standardTopSize2 = ''.obs;
+  final standardBottomSize2 = ''.obs;
+  final sizeGender2 = 'femme'.obs;
+
+  // --- Estimated confection days ---
+  final estimatedDays = 0.obs;
+
+  // --- Product-specific customization context ---
+  // fabricType : type/matière du produit (ex: "bazin") pour pré-filtrer le catalogue
+  // hasBroderie / hasFinition : indique si l'étape correspondante doit être affichée
+  // product*Options : listes spécifiques au produit (vide = catalogue global)
+  final fabricType = ''.obs;
+  final hasBroderie = false.obs;
+  final hasFinition = false.obs;
+  final productFabricOptions = <Map<String, dynamic>>[].obs;
+  final productEmbroideryOptions = <Map<String, dynamic>>[].obs;
+  final productFinishOptions = <Map<String, dynamic>>[].obs;
+
   // --- Uploaded Custom Images (one per step) ---
   final Rxn<File> customImageStep1 = Rxn<File>(); // Fabric custom image
   final Rxn<File> customImageStep2 = Rxn<File>(); // Cut/Broderie custom image
@@ -39,6 +63,10 @@ class CustomizationController extends GetxController {
   final selectedFabricOption =
       Rxn<Map<String, dynamic>>(); // The actual selected fabric object
 
+  // Fabric categories derived from fetched options (fabric_category field in Supabase)
+  final fabricCategories = <String>['Tous'].obs;
+  final selectedFabricCategory = 'Tous'.obs;
+
   // --- Step 2: Cut / Broderie ---
   final selectedStep2Option = 0.obs; // index or 999
 
@@ -46,6 +74,14 @@ class CustomizationController extends GetxController {
   final selectedStep3Option = 0.obs; // index or 999
 
   // --- Helper Methods to get display names ---
+  List<Map<String, dynamic>> get filteredFabrics {
+    if (selectedFabricCategory.value == 'Tous') return step1Options;
+    return step1Options.where((opt) {
+      final cat = (opt['fabric_category'] ?? '').toString().trim();
+      return cat.toLowerCase() == selectedFabricCategory.value.toLowerCase();
+    }).toList();
+  }
+
   String get fabricName {
     if (inputMode.value == 1) return "Mon propre tissu";
     if (selectedFabricOption.value != null) {
@@ -142,36 +178,109 @@ class CustomizationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
-    // Do NOT fetch options immediately because ProductDetail or CustomGenderStep
-    // is about to inject the real gender right after Controller creation.
-    // We listen to gender changes instead.
+    // Déclenche fetchOptions() quand le genre change (ex: CustomGenderStep).
+    // Pour les changements de produit, utiliser loadForProduct() à la place
+    // pour éviter le problème de timing (hasBroderie/hasFinition non encore set).
     ever(categoryType, (_) => fetchOptions());
+  }
+
+  /// Configure le controller pour un produit donné de façon atomique :
+  /// toutes les valeurs contextuelles sont définies AVANT que fetchOptions()
+  /// ne soit appelé, garantissant que hasBroderie et hasFinition sont corrects.
+  void loadForProduct({
+    required String category,
+    required String fabricTypeStr,
+    required bool hasBroderieVal,
+    required bool hasFinitionVal,
+    required List<Map<String, dynamic>> fabricOpts,
+    required List<Map<String, dynamic>> embroideryOpts,
+    required List<Map<String, dynamic>> finishOpts,
+  }) {
+    fabricType.value = fabricTypeStr;
+    hasBroderie.value = hasBroderieVal;
+    hasFinition.value = hasFinitionVal;
+    productFabricOptions.assignAll(fabricOpts);
+    productEmbroideryOptions.assignAll(embroideryOpts);
+    productFinishOptions.assignAll(finishOpts);
+
+    // Vide immédiatement les options des étapes non applicables.
+    // Cela garantit que si l'utilisateur tape "Suivant" avant la fin du fetch
+    // réseau, il ne verra jamais d'étapes avec de vieilles options périmées.
+    if (!hasBroderieVal) step2Options.clear();
+    if (!hasFinitionVal) step3Options.clear();
+
+    if (categoryType.value == category) {
+      fetchOptions();
+    } else {
+      categoryType.value = category;
+    }
   }
 
   void fetchOptions() async {
     try {
       isLoading.value = true;
-      final gender = categoryType.value.toLowerCase(); // 'homme' or 'femme'
-
-      // Fetch Step 1 (Fabrics), Step 2 (Models), Step 3 (Accessories) concurrently
-      // Mapping:
-      // fabric -> Step 1
-      // model (cut/embroidery) -> Step 2
-      // accessoire (accessory) -> Step 3
+      final gender = categoryType.value.toLowerCase();
       final step2Type = (gender == 'homme') ? 'embroidery' : 'cut';
 
-      final results = await Future.wait([
-        _catalogRepository.getOptions('fabric', gender),
-        _catalogRepository.getOptions(step2Type, gender),
-        _catalogRepository.getOptions('accessory', gender),
-      ]);
+      // ── Step 1 : tissu ────────────────────────────────────────────
+      // Priorité : options produit > catalogue global
+      List<Map<String, dynamic>> fabrics;
+      if (productFabricOptions.isNotEmpty) {
+        fabrics = productFabricOptions.toList();
+      } else {
+        fabrics = await _catalogRepository.getOptions('fabric', gender);
+      }
 
-      step1Options.assignAll(results[0]);
-      step2Options.assignAll(results[1]);
-      step3Options.assignAll(results[2]);
+      // ── Step 2 : broderie/coupe (seulement si le produit en dispose) ──
+      List<Map<String, dynamic>> step2 = [];
+      if (hasBroderie.value) {
+        if (productEmbroideryOptions.isNotEmpty) {
+          step2 = productEmbroideryOptions.toList();
+        } else {
+          step2 = await _catalogRepository.getOptions(step2Type, gender);
+        }
+      }
 
-      // Reset selections when options change
+      // ── Step 3 : finition/accessoire (seulement si le produit en dispose) ──
+      List<Map<String, dynamic>> step3 = [];
+      if (hasFinition.value) {
+        if (productFinishOptions.isNotEmpty) {
+          step3 = productFinishOptions.toList();
+        } else {
+          step3 = await _catalogRepository.getOptions('accessory', gender);
+        }
+      }
+
+      step1Options.assignAll(fabrics);
+      step2Options.assignAll(step2);
+      step3Options.assignAll(step3);
+
+      // Catégories de tissu
+      final catSet = <String>{};
+      for (final opt in fabrics) {
+        final cat = (opt['fabric_category'] ?? opt['category'] ?? '')
+            .toString()
+            .trim();
+        if (cat.isNotEmpty) catSet.add(cat);
+      }
+      final sortedCats = catSet.toList()..sort();
+      fabricCategories.assignAll(['Tous', ...sortedCats]);
+
+      // Pré-sélectionner la catégorie correspondant au tissu du produit
+      if (fabricType.value.isNotEmpty && productFabricOptions.isEmpty) {
+        final matched = sortedCats.firstWhere(
+          (c) =>
+              c.toLowerCase().contains(fabricType.value.toLowerCase()) ||
+              fabricType.value.toLowerCase().contains(c.toLowerCase()),
+          orElse: () => '',
+        );
+        selectedFabricCategory.value =
+            matched.isNotEmpty ? matched : 'Tous';
+      } else {
+        selectedFabricCategory.value = 'Tous';
+      }
+
+      // Réinitialiser les sélections
       selectedVariantIndex.value = -1;
       selectedFabricOption.value = null;
       selectedStep2Option.value = 0;

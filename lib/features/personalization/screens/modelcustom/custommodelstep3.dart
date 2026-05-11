@@ -18,261 +18,227 @@ class CustomModelStep3 extends StatefulWidget {
 class _CustomModelStep3State extends State<CustomModelStep3> {
   final controller = Get.put(CustomizationController());
 
-  bool get isNextEnabled {
-    // Basic validation
-    return controller.selectedStep3Option.value >= 0;
-  }
+  bool get isNextEnabled => controller.selectedStep3Option.value >= 0;
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final currentOptions = controller.step3Options;
+    final isMale = widget.categoryType == 'homme';
 
-      return CustomizationLayout(
-        title: widget.categoryType == 'homme' ? "Finition" : "Accessoire",
-        subTitle: widget.categoryType == 'homme'
-            ? "Étape 3 : Choisissez la finition"
-            : "Étape 3 : Choisissez l'accessoire",
-        step: 3,
-        totalSteps: 4,
-        isNextEnabled: isNextEnabled,
-        onNext: () {
-          Get.to(() => CustomModelStep4(categoryType: widget.categoryType));
-        },
-        child: Column(
-          children: [
-            const SizedBox(height: OSizes.spaceBtwSections / 1.5),
+    return Obx(() => CustomizationLayout(
+          title: isMale ? 'Finition' : 'Accessoire',
+          subTitle: isMale
+              ? 'Étape 3 · Choisissez la finition'
+              : "Étape 3 · Choisissez l'accessoire",
+          step: 3,
+          totalSteps: 4,
+          isNextEnabled: isNextEnabled,
+          onNext: () {
+            Get.to(
+                () => CustomModelStep4(categoryType: widget.categoryType));
+          },
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: OSizes.spaceBtwItems),
 
-            if (controller.isLoading.value)
-              const CircularProgressIndicator()
-            else if (currentOptions.isEmpty)
-              const Center(child: Text("Aucune option disponible."))
-            else
-              Expanded(
-                child: GridView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 22, // Increased spacing
-                    mainAxisSpacing: 22,
-                    childAspectRatio: 0.7, // Slightly taller for more elegance
-                  ),
-                  itemCount: currentOptions.length,
-                  itemBuilder: (context, index) {
-                    final option = currentOptions[index];
-                    final imageUrl = controller.getOptionImage(option);
-                    final title = controller.getName(option);
-
-                    return Obx(() {
-                      final isSelected =
-                          controller.selectedStep3Option.value == index;
-
-                      return GestureDetector(
-                        onTap: () =>
-                            controller.selectedStep3Option.value = index,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 400),
-                          curve: Curves.easeOutQuint,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius:
-                                BorderRadius.circular(28), // Softer radius
-                            border: Border.all(
-                              color: isSelected
-                                  ? OColors.primary
-                                  : Colors.transparent,
-                              width: 2.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: isSelected
-                                    ? OColors.primary.withOpacity(0.12)
-                                    : Colors.black.withOpacity(0.05),
-                                blurRadius: isSelected ? 25 : 15,
-                                offset: const Offset(0, 10),
-                              )
-                            ],
-                          ),
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(25.5),
-                                  child: imageUrl.isNotEmpty
-                                      ? Image(
-                                          image: imageUrl.startsWith('http')
-                                              ? NetworkImage(imageUrl)
-                                              : AssetImage(imageUrl)
-                                                  as ImageProvider,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              Container(
-                                                  color: Colors.grey[200],
-                                                  child: Icon(Iconsax.image,
-                                                      color: Colors.grey)),
-                                        )
-                                      : Container(
-                                          color: Colors.grey[200],
-                                          child: Icon(Iconsax.image,
-                                              color: Colors.grey)),
-                                ),
-                              ),
-
-                              // Softer Gradient
-                              Positioned.fill(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(25.5),
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.transparent,
-                                        Colors.black.withOpacity(0.0),
-                                        Colors.black.withOpacity(0.55),
-                                      ],
-                                      stops: const [0.6, 0.75, 1.0],
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              if (isSelected)
-                                Positioned(
-                                  top: 14,
-                                  right: 14,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    decoration: const BoxDecoration(
-                                      color: OColors.primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.check,
-                                        size: 12, color: Colors.white),
-                                  ),
-                                ),
-
-                              Positioned(
-                                bottom: 18,
-                                left: 14,
-                                right: 14,
-                                child: Text(
-                                  title.toUpperCase(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9.5, // Even more minimalist
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.8,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    });
-                  },
-                ),
-              ),
-
-            const SizedBox(height: 28),
-
-            // --- 3. Custom Option Upload ---
-            GestureDetector(
-              onTap: () => controller.pickCustomImage(3),
-              child: Obx(() => AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: controller.selectedStep3Option.value == 999
-                          ? OColors.primary.withOpacity(0.03)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: controller.selectedStep3Option.value == 999
-                            ? OColors.primary.withOpacity(0.5)
-                            : Colors.grey[100]!,
-                        width: 1.5,
+                if (controller.isLoading.value)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (controller.step3Options.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Center(
+                      child: Text(
+                        'Aucune option disponible.',
+                        style: TextStyle(
+                            fontSize: 13, color: Colors.grey[400]),
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        // Show thumbnail if image was picked
-                        controller.customImageStep3.value != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.file(
-                                  controller.customImageStep3.value!,
-                                  width: 44,
-                                  height: 44,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color:
-                                      controller.selectedStep3Option.value == 999
-                                          ? OColors.primary
-                                          : Colors.grey[50],
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  controller.selectedStep3Option.value == 999
-                                      ? Iconsax.gallery_tick
-                                      : Iconsax.magic_star,
-                                  color:
-                                      controller.selectedStep3Option.value == 999
-                                          ? Colors.white
-                                          : OColors.primary.withOpacity(0.6),
-                                  size: 20,
-                                ),
-                              ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                controller.selectedStep3Option.value == 999
-                                    ? "Option Spécifiée"
-                                    : "Un souhait particulier ?",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                  color:
-                                      controller.selectedStep3Option.value == 999
-                                          ? OColors.primary
-                                          : Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                controller.selectedStep3Option.value == 999
-                                    ? "Nous prendrons cela en compte."
-                                    : "Uploader une photo pour un détail unique",
-                                style: TextStyle(
-                                    color: Colors.grey[500], fontSize: 11),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (controller.selectedStep3Option.value == 999)
-                          const Icon(Icons.check_circle,
-                              color: OColors.primary, size: 20)
-                        else
-                          Icon(Icons.arrow_forward_ios,
-                              size: 10, color: Colors.grey[300])
-                      ],
+                  )
+                else
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.72,
                     ),
-                  )),
+                    itemCount: controller.step3Options.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == controller.step3Options.length) {
+                        return _buildCustomCard();
+                      }
+                      return _buildOptionCard(
+                          controller.step3Options[index], index);
+                    },
+                  ),
+
+                const SizedBox(height: 32),
+              ],
             ),
-            const SizedBox(height: OSizes.spaceBtwSections / 1.5),
+          ),
+        ));
+  }
+
+  // ── Option card ─────────────────────────────────────────────────────────────
+
+  Widget _buildOptionCard(Map<String, dynamic> option, int index) {
+    final imageUrl = controller.getOptionImage(option);
+    final name = controller.getName(option);
+
+    return Obx(() {
+      final isSelected = controller.selectedStep3Option.value == index;
+      return GestureDetector(
+        onTap: () => controller.selectedStep3Option.value = index,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? OColors.primary
+                            : Colors.transparent,
+                        width: 2.5,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                          isSelected ? 9.5 : 12),
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _placeholder(),
+                            )
+                          : _placeholder(),
+                    ),
+                  ),
+                  if (isSelected)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: const BoxDecoration(
+                          color: OColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.check,
+                            size: 11, color: Colors.white),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              name,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight:
+                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? OColors.primary
+                    : const Color(0xFF6B6560),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       );
     });
+  }
+
+  // ── Custom "Autre" card ─────────────────────────────────────────────────────
+
+  Widget _buildCustomCard() {
+    return Obx(() {
+      final isSelected = controller.selectedStep3Option.value == 999;
+      final hasImage = controller.customImageStep3.value != null;
+      return GestureDetector(
+        onTap: () => controller.pickCustomImage(3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? OColors.primary.withValues(alpha: 0.07)
+                      : const Color(0xFFF4F1EC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected
+                        ? OColors.primary
+                        : const Color(0xFFE4E0DA),
+                    width: isSelected ? 2.5 : 1,
+                  ),
+                ),
+                child: hasImage
+                    ? ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(isSelected ? 9.5 : 11),
+                        child: Image.file(
+                          controller.customImageStep3.value!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      )
+                    : Center(
+                        child: Icon(
+                          Iconsax.add_circle,
+                          size: 22,
+                          color: isSelected
+                              ? OColors.primary
+                              : const Color(0xFFB0AAA2),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              isSelected ? 'Ajouté' : 'Autre',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight:
+                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? OColors.primary
+                    : const Color(0xFF6B6560),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _placeholder() {
+    return Container(
+      color: const Color(0xFFF4F1EC),
+      child: const Center(
+        child: Icon(Iconsax.image, color: Color(0xFFD0CCC8), size: 20),
+      ),
+    );
   }
 }

@@ -23,7 +23,7 @@ class ProductController extends GetxController {
       final products = await _catalogRepository.getAllProducts();
       featuredProducts.assignAll(products);
     } catch (e) {
-      OLoaders.errorSnackBar(title: 'Oh Snap!', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible de charger les produits. Veuillez réessayer.');
     } finally {
       isLoading.value = false;
     }
@@ -38,7 +38,7 @@ class ProductController extends GetxController {
       featuredProducts.assignAll(products);
       print('✅ Loaded ${products.length} products');
     } catch (e) {
-      OLoaders.errorSnackBar(title: 'Oh Snap!', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible de charger les produits. Veuillez réessayer.');
     } finally {
       isLoading.value = false;
     }
@@ -53,7 +53,7 @@ class ProductController extends GetxController {
       featuredProducts.assignAll(products);
       print('✅ Loaded ${products.length} products for category');
     } catch (e) {
-      OLoaders.errorSnackBar(title: 'Oh Snap!', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible de charger les produits. Veuillez réessayer.');
     } finally {
       isLoading.value = false;
     }

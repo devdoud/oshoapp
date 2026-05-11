@@ -63,7 +63,7 @@ class SupportController extends GetxController {
           .add(message.toJson());
 
     } catch (e) {
-      OLoaders.errorSnackBar(title: 'Erreur', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible d\'envoyer le message. Veuillez réessayer.');
     }
   }
 }

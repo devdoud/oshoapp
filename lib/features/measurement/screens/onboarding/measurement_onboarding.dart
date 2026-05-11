@@ -1,269 +1,306 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:osho/features/personalization/controllers/measurement_controller.dart';
-import 'package:osho/utils/constants/colors.dart';
-import 'package:osho/utils/constants/sizes.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
-
-import 'package:flutter/services.dart';
 
 class MeasurementOnboardingScreen extends StatefulWidget {
   const MeasurementOnboardingScreen({super.key});
 
   @override
-  State<MeasurementOnboardingScreen> createState() => _MeasurementOnboardingScreenState();
+  State<MeasurementOnboardingScreen> createState() =>
+      _MeasurementOnboardingScreenState();
 }
 
-
-
-class _MeasurementOnboardingScreenState extends State<MeasurementOnboardingScreen> with SingleTickerProviderStateMixin {
+class _MeasurementOnboardingScreenState
+    extends State<MeasurementOnboardingScreen>
+    with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  late AnimationController _breathingController;
-  late Animation<double> _breathingAnimation;
+
+  late final AnimationController _pulse;
+  late final Animation<double> _pulseAnim;
+
+  static const _slides = [
+    _Slide(
+      title: 'Prenez vos mesures',
+      desc:
+          'Mesurez chaque partie de votre corps avec précision pour une confection parfaitement ajustée.',
+      icon: Iconsax.ruler,
+      accent: Color(0xFF1A1A1A),
+    ),
+    _Slide(
+      title: 'Guide vidéo',
+      desc:
+          'Des tutoriels courts vous accompagnent pas à pas pour chaque zone du corps.',
+      icon: Iconsax.video_play,
+      accent: Color(0xFF3B7DD8),
+    ),
+    _Slide(
+      title: 'Profil enregistré',
+      desc:
+          'Sauvegardez vos mesures une seule fois et réutilisez-les pour toutes vos commandes futures.',
+      icon: Iconsax.user_tick,
+      accent: Color(0xFF34C759),
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _breathingController = AnimationController(
-      vsync: this, 
-      duration: const Duration(milliseconds: 3000)
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
     )..repeat(reverse: true);
-    
-    _breathingAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut)
+    _pulseAnim = Tween<double>(begin: 1.0, end: 1.025).animate(
+      CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
     );
   }
 
   @override
   void dispose() {
-    _breathingController.dispose();
+    _pulse.dispose();
+    _pageController.dispose();
     super.dispose();
+  }
+
+  void _next() {
+    HapticFeedback.lightImpact();
+    if (_currentPage == _slides.length - 1) {
+      MeasurementController.instance.completeOnboarding();
+    } else {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = OHelperFunctions.isDarkMode(context);
+    final bg = isDark ? const Color(0xFF111111) : const Color(0xFFF8F6F3);
+    final bottomPad = MediaQuery.of(context).padding.bottom;
 
-    final List<Map<String, dynamic>> slides = [
-      {
-        'title': 'Prenez vos mesures',
-        'desc': 'Apprenez à prendre vos mesures précisément pour une confection parfaite.',
-        'icon': Iconsax.ruler,
-        'color': OColors.primary,
-      },
-      {
-        'title': 'Guide Vidéo',
-        'desc': 'Des tutoriels simples vous guident pas à pas pour chaque partie du corps.',
-        'icon': Iconsax.video_play,
-        'color': Colors.blue,
-      },
-      {
-        'title': 'Profil de mesures',
-        'desc': 'Enregistrez votre profil une seule fois et utilisez-le pour toutes vos commandes.',
-        'icon': Iconsax.user_tick,
-        'color': Colors.green,
-      },
-    ];
-
-    return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.white,
-      body: Stack(
-        children: [
-          // 1. Primary Dynamic Background Blob (Top-Right/Left logic)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 1000),
-            curve: Curves.elasticOut,
-            top: _currentPage == 0 ? -100 : (_currentPage == 1 ? 100 : -50),
-            right: _currentPage == 0 ? -100 : (_currentPage == 1 ? 250 : -100),
-            left: _currentPage == 2 ? -100 : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 800),
-              width: 400,
-              height: 400,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: slides[_currentPage]['color'].withOpacity(0.12),
-                boxShadow: [
-                   BoxShadow(color: slides[_currentPage]['color'].withOpacity(0.1), blurRadius: 80, spreadRadius: 30)
-                ]
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark
+          ? SystemUiOverlayStyle.light
+              .copyWith(statusBarColor: Colors.transparent)
+          : SystemUiOverlayStyle.dark
+              .copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
+        backgroundColor: bg,
+        body: Column(
+          children: [
+            // ── Slides ───────────────────────────────────────────────────
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (i) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _currentPage = i);
+                },
+                itemCount: _slides.length,
+                itemBuilder: (context, index) {
+                  final s = _slides[index];
+                  return _SlidePage(
+                    slide: s,
+                    isDark: isDark,
+                    pulseAnim: _pulseAnim,
+                  );
+                },
               ),
             ),
-          ),
 
-          // 2. Secondary Blob (Bottom-Left/Right logic for Balance)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 1200),
-            curve: Curves.easeInOut,
-            bottom: _currentPage == 0 ? -50 : -150,
-            left: _currentPage == 0 ? -50 : (_currentPage == 1 ? -100 : 200),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 800),
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: slides[_currentPage]['color'].withOpacity(0.08),
-                boxShadow: [
-                   BoxShadow(color: slides[_currentPage]['color'].withOpacity(0.05), blurRadius: 60)
-                ]
-              ),
-            ),
-          ),
-          
-          Column(
-            children: [
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() => _currentPage = index);
-                    HapticFeedback.lightImpact(); // Tactile feedback
-                  },
-                  itemCount: slides.length,
-                  itemBuilder: (context, index) {
-                    final slide = slides[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Spacer(),
-                          // Breath Animated Glass Container
-                          ScaleTransition(
-                            scale: _breathingAnimation,
-                            child: Container(
-                              padding: const EdgeInsets.all(40), // More breathing room
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isDark ? Colors.white.withValues(alpha:0.05) : Colors.white.withValues(alpha: .9),
-                                border: Border.all(color: Colors.white.withValues(alpha: .5), width: 1.5),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: slide['color'].withOpacity(0.3),
-                                    blurRadius: 40,
-                                    offset: const Offset(0, 15),
-                                    spreadRadius: -5
-                                  )
-                                ]
-                              ),
-                              child: Icon(slide['icon'], size: 80, color: slide['color']),
-                            ),
-                          ),
-                          const Spacer(),
-                          
-                          // Typography
-                          Column(
-                            children: [
-                              Text(
-                                slide['title'],
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  color: isDark ? Colors.white : Colors.black,
-                                  letterSpacing: -0.5,
-                                  height: 1.1,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 24),
-                              Text(
-                                slide['desc'],
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: isDark ? Colors.white70 : Colors.grey[700],
-                                  height: 1.6,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w400
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              // Bottom Control Area (Glassmorphism inspired pill)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-                child: Column(
-                  children: [
-                    // Glass Indicator Container
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20)
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(
-                            slides.length,
-                            (index) => AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                                  width: _currentPage == index ? 20 : 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                      color: _currentPage == index
-                                          ? OColors.primary
-                                          : Colors.grey[400],
-                                      borderRadius: BorderRadius.circular(10)),
-                                )),
+            // ── Bottom controls ──────────────────────────────────────────
+            Padding(
+              padding:
+                  EdgeInsets.fromLTRB(24, 0, 24, bottomPad + 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Dots
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      _slides.length,
+                      (i) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOut,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: _currentPage == i ? 18 : 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: _currentPage == i
+                              ? (isDark ? Colors.white : const Color(0xFF1A1A1A))
+                              : (isDark
+                                  ? Colors.white.withValues(alpha: 0.18)
+                                  : const Color(0xFFD6D0CB)),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                  ),
 
-                    // Primary Button with Shadow & Scale
-                    SizedBox(
-                        width: double.infinity,
-                        height: 64,
-                        child: ElevatedButton(
-                          onPressed: () {
-                             HapticFeedback.mediumImpact();
-                            if (_currentPage == slides.length - 1) {
-                               MeasurementController.instance.completeOnboarding();
-                            } else {
-                               _pageController.nextPage(
-                                duration: const Duration(milliseconds: 500),
-                                curve: Curves.easeOutQuart);
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: OColors.primary,
-                            elevation: 15,
-                            shadowColor: OColors.primary.withOpacity(0.4),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24)),
-                          ),
-                          child: Text(
-                             _currentPage == slides.length - 1 ? "Commencer" : 'next'.tr,
-                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: Colors.white)
+                  const SizedBox(height: 28),
+
+                  // Primary button
+                  GestureDetector(
+                    onTap: _next,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          _currentPage == _slides.length - 1
+                              ? 'Commencer'
+                              : 'Suivant',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? const Color(0xFF1A1A1A)
+                                : Colors.white,
+                            letterSpacing: 0.1,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      
-                      // Skip Button
-                       AnimatedOpacity(
-                         duration: const Duration(milliseconds: 300),
-                         opacity: _currentPage == slides.length - 1 ? 0.0 : 1.0,
-                         child: TextButton(
-                           onPressed: () {
-                             MeasurementController.instance.completeOnboarding();
-                           },
-                           child: Text('skip'.tr, style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.w600)),
-                         ),
-                       )
-                  ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Skip
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 250),
+                    opacity: _currentPage == _slides.length - 1 ? 0 : 1,
+                    child: GestureDetector(
+                      onTap: () =>
+                          MeasurementController.instance.completeOnboarding(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          'Passer',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: isDark
+                                ? Colors.white38
+                                : const Color(0xFFB0AAA2),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Slide data ────────────────────────────────────────────────────────────────
+
+class _Slide {
+  final String title;
+  final String desc;
+  final IconData icon;
+  final Color accent;
+
+  const _Slide({
+    required this.title,
+    required this.desc,
+    required this.icon,
+    required this.accent,
+  });
+}
+
+// ── Slide page ────────────────────────────────────────────────────────────────
+
+class _SlidePage extends StatelessWidget {
+  final _Slide slide;
+  final bool isDark;
+  final Animation<double> pulseAnim;
+
+  const _SlidePage({
+    required this.slide,
+    required this.isDark,
+    required this.pulseAnim,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Column(
+        children: [
+          const Spacer(flex: 2),
+
+          // Icon container
+          ScaleTransition(
+            scale: pulseAnim,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: slide.accent.withValues(
+                    alpha: isDark ? 0.10 : 0.07),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: slide.accent.withValues(alpha: 0.14),
+                  width: 1,
                 ),
-              )
-            ],
+              ),
+              child: Center(
+                child: Icon(
+                  slide.icon,
+                  size: 40,
+                  color: isDark && slide.accent == const Color(0xFF1A1A1A)
+                      ? Colors.white
+                      : slide.accent,
+                ),
+              ),
+            ),
           ),
+
+          const Spacer(flex: 2),
+
+          // Title
+          Text(
+            slide.title,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+              height: 1.15,
+              color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 14),
+
+          // Description
+          Text(
+            slide.desc,
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? Colors.white54 : const Color(0xFF888480),
+              height: 1.65,
+              fontWeight: FontWeight.w400,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const Spacer(flex: 3),
         ],
       ),
     );

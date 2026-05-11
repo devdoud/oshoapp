@@ -106,7 +106,7 @@ class OrderController extends GetxController {
     } catch (e) {
       OLoaders.errorSnackBar(
         title: 'Erreur',
-        message: e.toString(),
+        message: e is String ? e : 'Une erreur est survenue. Veuillez réessayer.',
       );
       return false;
     } finally {
@@ -145,7 +145,7 @@ class OrderController extends GetxController {
     } catch (e) {
       OLoaders.errorSnackBar(
         title: 'Erreur',
-        message: e.toString(),
+        message: e is String ? e : 'Une erreur est survenue. Veuillez réessayer.',
       );
       return false;
     } finally {

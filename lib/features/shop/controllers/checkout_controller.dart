@@ -12,6 +12,7 @@ import 'package:osho/features/shop/controllers/cart_controller.dart';
 import 'package:osho/features/shop/controllers/customization_controller.dart';
 import 'package:osho/features/shop/models/order_model.dart';
 import 'package:osho/features/shop/screens/checkout/success_screen.dart';
+import 'package:osho/utils/helpers/logistics_calculator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CheckoutController extends GetxController {
@@ -29,6 +30,30 @@ class CheckoutController extends GetxController {
   final isLoading = false.obs;
   final _orderRepository = Get.put(OrderRepository());
   Worker? _addressWorker;
+
+  LogisticsRate get currentLogisticsRate => customLogisticsRate;
+
+  LogisticsRate get customLogisticsRate =>
+      OLogisticsCalculator.rateForCountry(countryController.text);
+
+  LogisticsRate get cartLogisticsRate => OLogisticsCalculator.rateForCountry(
+        countryController.text,
+        itemCount: _cartItemCount,
+      );
+
+  int get _cartItemCount => CartController.instance.items.fold<int>(
+        0,
+        (sum, item) => sum + item.quantity,
+      );
+
+  double get shippingFee => customLogisticsRate.fee;
+
+  double get customTotalAmount =>
+      CustomizationController.instance.basePrice.value +
+      customLogisticsRate.fee;
+
+  double get cartTotalAmount =>
+      CartController.instance.subtotal + cartLogisticsRate.fee;
 
   @override
   void onInit() {
@@ -125,10 +150,17 @@ class CheckoutController extends GetxController {
           message: 'Veuillez saisir votre adresse precise.');
       return false;
     }
+    if (countryController.text.trim().isEmpty) {
+      OLoaders.warningSnackBar(
+          title: 'Pays manquant',
+          message: 'Veuillez saisir le pays pour calculer la logistique.');
+      return false;
+    }
     return true;
   }
 
-  Map<String, dynamic> _buildShippingAddress() {
+  Map<String, dynamic> _buildShippingAddress(
+      {required LogisticsRate logisticsRate}) {
     return {
       'fullName': fullNameController.text.trim(),
       'phone': phoneController.text.trim(),
@@ -141,13 +173,23 @@ class CheckoutController extends GetxController {
       'country': countryController.text.trim().isEmpty
           ? null
           : countryController.text.trim(),
+      'logistics_zone': logisticsRate.zone,
+      'logistics_fee': logisticsRate.fee,
+      'logistics_weight': logisticsRate.weightLabel,
+      'logistics_source': logisticsRate.sourceLabel,
+      'delivery_estimate': logisticsRate.estimate,
     };
   }
 
   OrderItemModel _buildCustomOrderItem() {
     final customController = CustomizationController.instance;
     final measurementController = MeasurementController.instance;
+    final isCouple = customController.categoryType.value
+        .toLowerCase()
+        .contains('couple');
     final profileId = measurementController.selectedProfile.value?.id;
+    final profileId2 =
+        isCouple ? measurementController.selectedProfile2.value?.id : null;
 
     final productId = customController.productId.value.isNotEmpty
         ? customController.productId.value
@@ -163,6 +205,11 @@ class CheckoutController extends GetxController {
         'etape2': customController.getStep2Name(),
         'etape3': customController.getStep3Name(),
         'category': customController.categoryType.value,
+        if (isCouple && profileId2 != null)
+          'measurement_profile_id_2': profileId2,
+        if (isCouple)
+          'measurement_snapshot_2':
+              measurementController.selectedProfile2.value?.toJson(),
       },
       measurementSnapshot:
           measurementController.selectedProfile.value?.toJson(),
@@ -170,14 +217,19 @@ class CheckoutController extends GetxController {
   }
 
   List<OrderItemModel> _buildCartOrderItems() {
+    final measurementController = MeasurementController.instance;
+    final profileId = measurementController.selectedProfile.value?.id;
+    final profileSnapshot = measurementController.selectedProfile.value?.toJson();
+
     return CartController.instance.items
         .map((item) => OrderItemModel(
               productId: item.productId,
               quantity: item.quantity,
               price: item.price,
-              customizationDetails: const {
-                'type': 'cart',
-              },
+              measurementProfileId: profileId,
+              measurementSnapshot: profileSnapshot,
+              customizationDetails:
+                  item.customizationDetails ?? {'type': 'cart'},
             ))
         .toList();
   }
@@ -216,9 +268,10 @@ class CheckoutController extends GetxController {
       (sum, item) => sum + (item.price * item.quantity),
     );
     final shippingFee = (totalAmount - itemTotal).clamp(0, double.infinity);
+    final logisticsRate = isCart ? cartLogisticsRate : customLogisticsRate;
 
     return {
-      'shipping_address': _buildShippingAddress(),
+      'shipping_address': _buildShippingAddress(logisticsRate: logisticsRate),
       'shipping_fee': shippingFee,
       'payment_method': 'card',
       'source': isCart ? 'cart' : 'custom',
@@ -289,11 +342,12 @@ class CheckoutController extends GetxController {
         totalAmount: totalAmount,
         orderDate: DateTime.now(),
         paymentMethod: 'mobile',
-        shippingAddress: _buildShippingAddress(),
+        shippingAddress:
+            _buildShippingAddress(logisticsRate: customLogisticsRate),
       );
 
-      final savedOrder =
-          await _orderRepository.saveOrder(order, userId, paymentStatus: 'pending');
+      final savedOrder = await _orderRepository.saveOrder(order, userId,
+          paymentStatus: 'pending');
       Get.offAll(() => OrderSuccessScreen(order: savedOrder));
       return savedOrder;
     } catch (e) {
@@ -328,11 +382,12 @@ class CheckoutController extends GetxController {
         totalAmount: totalAmount,
         orderDate: DateTime.now(),
         paymentMethod: 'mobile',
-        shippingAddress: _buildShippingAddress(),
+        shippingAddress:
+            _buildShippingAddress(logisticsRate: cartLogisticsRate),
       );
 
-      final savedOrder =
-          await _orderRepository.saveOrder(order, userId, paymentStatus: 'pending');
+      final savedOrder = await _orderRepository.saveOrder(order, userId,
+          paymentStatus: 'pending');
       await cartController.clear();
       Get.offAll(() => OrderSuccessScreen(order: savedOrder));
       return savedOrder;
@@ -344,4 +399,3 @@ class CheckoutController extends GetxController {
     }
   }
 }
-

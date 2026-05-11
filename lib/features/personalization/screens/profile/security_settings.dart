@@ -21,33 +21,11 @@ class SecuritySettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(OSizes.defaultPadding),
         child: Column(
           children: [
-            // Change Password
             _buildSecurityTile(
               context,
               icon: Iconsax.lock,
               title: "Changer le mot de passe",
               subtitle: "Mettre à jour votre mot de passe pour plus de sécurité",
-              onTap: () {},
-            ),
-            const SizedBox(height: 16),
-            
-            // 2FA
-            _buildSecurityTile(
-              context,
-              icon: Iconsax.scan_barcode,
-              title: "Authentification à deux facteurs",
-              subtitle: "Ajouter une couche de sécurité supplémentaire",
-              onTap: () {},
-              isToggle: true,
-            ),
-            const SizedBox(height: 16),
-
-            // Devices
-            _buildSecurityTile(
-              context,
-              icon: Iconsax.mobile,
-              title: "Appareils connectés",
-              subtitle: "Gérer les appareils connectés à votre compte",
               onTap: () {},
             ),
 

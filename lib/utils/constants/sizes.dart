@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class OSizes {
   OSizes._();
 
@@ -64,8 +62,14 @@ class OSizes {
   // Interline spacing
   static const double interlineSpacing = 2.0;
 
-  // padding default 
+  // padding default
   static const double defaultPadding = 16.0;
   static const double buttonPadding = 12.0;
 
+  // Frais logistiques de base pour un colis textile leger jusqu'a 1 kg.
+  static const double kShippingFee = 5000.0;
+  static const double kAfricaShippingFee = 18600.0;
+  static const double kEuropeShippingFee = 12700.0;
+  static const double kNorthAmericaShippingFee = 27500.0;
+  static const double kInternationalShippingFee = 25700.0;
 }

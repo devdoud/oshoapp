@@ -84,4 +84,21 @@ class MeasurementRepository extends GetxController {
       rethrow;
     }
   }
+
+  /// Set a profile as primary (clears is_primary on all others first)
+  Future<void> setPrimaryProfile(String profileId, String userId) async {
+    try {
+      await _supabase
+          .from('measurement_profiles')
+          .update({'is_primary': false})
+          .eq('user_id', userId);
+      await _supabase
+          .from('measurement_profiles')
+          .update({'is_primary': true})
+          .eq('id', profileId);
+    } catch (e) {
+      debugPrint('[MEASUREMENT_REPOSITORY][SET_PRIMARY] $e');
+      rethrow;
+    }
+  }
 }

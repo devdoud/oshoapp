@@ -24,7 +24,7 @@ class AddressController extends GetxController {
       addresses.assignAll(list);
       _selectDefault(list);
     } catch (e) {
-      OLoaders.errorSnackBar(title: 'Erreur', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible de charger vos adresses. Veuillez réessayer.');
     } finally {
       isLoading.value = false;
     }
@@ -47,7 +47,7 @@ class AddressController extends GetxController {
           title: 'Succes', message: 'Adresse enregistree.');
       return true;
     } catch (e) {
-      OLoaders.errorSnackBar(title: 'Erreur', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible d\'enregistrer l\'adresse. Veuillez réessayer.');
       return false;
     } finally {
       isLoading.value = false;
@@ -73,7 +73,7 @@ class AddressController extends GetxController {
             title: 'Adresse principale', message: 'Adresse mise a jour.');
       }
     } catch (e) {
-      OLoaders.errorSnackBar(title: 'Erreur', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible de définir l\'adresse par défaut. Veuillez réessayer.');
     } finally {
       isLoading.value = false;
     }

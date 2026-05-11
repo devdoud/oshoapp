@@ -15,6 +15,9 @@ class MeasurementController extends GetxController {
       <MeasurementProfileModel>[].obs;
   Rx<MeasurementProfileModel?> selectedProfile =
       Rx<MeasurementProfileModel?>(null);
+  // Second profile for couple orders (selected manually at checkout)
+  Rx<MeasurementProfileModel?> selectedProfile2 =
+      Rx<MeasurementProfileModel?>(null);
 
   @override
   void onInit() {
@@ -80,6 +83,21 @@ class MeasurementController extends GetxController {
     } catch (e) {
       OLoaders.errorSnackBar(title: 'Erreur', message: _formatError(e));
       return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> setPrimary(String id) async {
+    try {
+      isLoading.value = true;
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return;
+      await _measurementRepository.setPrimaryProfile(id, userId);
+      await fetchUserMeasurements();
+      OLoaders.successSnackBar(title: 'Succes', message: 'Profil principal mis a jour.');
+    } catch (e) {
+      OLoaders.errorSnackBar(title: 'Erreur', message: _formatError(e));
     } finally {
       isLoading.value = false;
     }

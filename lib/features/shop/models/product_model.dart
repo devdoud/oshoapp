@@ -22,6 +22,29 @@ class ProductModel {
   String sku;
   bool isFeatured;
 
+  // --- Spécifications fixes du produit (définies à la création) ---
+  String? fabric;      // Tissu / Matière (ex: "Bazin Riche", "Kente", "Wax")
+  String? embroidery;  // Broderie / Coupe / Style (ex: "Broderie standard", "Col V brodé")
+  String? accessory;   // Accessoire / Finition (ex: "Sans accessoire", "Ceinture tissu")
+
+  // --- Tags prédéfinis (ex: ["nouveaute", "bestseller"]) ---
+  List<String> tags;
+
+  // --- Listes d'options spécifiques au produit pour la personnalisation ---
+  // Chaque entrée : {name: String, image_url: String}
+  // Vide = utiliser le catalogue global filtré par le type du champ correspondant
+  List<Map<String, dynamic>> fabricOptions;
+  List<Map<String, dynamic>> embroideryOptions;
+  List<Map<String, dynamic>> finishOptions;
+
+  // --- "Perfect For" / "Parfait pour" ---
+  List<String>? perfectFor;
+
+  // --- Prix en dollars (saisi manuellement, indépendant du prix FCFA) ---
+  double? priceUsd;
+
+  DateTime? createdAt;
+
   ProductModel({
     required this.id,
     required this.title,
@@ -43,6 +66,16 @@ class ProductModel {
     this.estimatedDays,
     this.measurements,
     this.isFeatured = false,
+    this.fabric,
+    this.embroidery,
+    this.accessory,
+    this.tags = const [],
+    this.fabricOptions = const [],
+    this.embroideryOptions = const [],
+    this.finishOptions = const [],
+    this.perfectFor,
+    this.priceUsd,
+    this.createdAt,
   });
 
   /// Create Empty func for clean code
@@ -71,6 +104,15 @@ class ProductModel {
       'EstimatedDays': estimatedDays,
       'Measurements': measurements ?? [],
       'IsFeatured': isFeatured,
+      'fabric': fabric,
+      'embroidery': embroidery,
+      'accessory': accessory,
+      'tags': tags,
+      'fabric_options': fabricOptions,
+      'embroidery_options': embroideryOptions,
+      'finish_options': finishOptions,
+      'perfect_for': perfectFor,
+      'price_usd': priceUsd,
     };
   }
 
@@ -205,6 +247,56 @@ class ProductModel {
       estimatedDays: json['estimated_days'] ?? json['estimatedDays'] ?? 0,
       measurements: json['measurements'] ?? [],
       isFeatured: json['is_featured'] ?? json['isFeatured'] ?? false,
+      fabric: json['fabric'] as String?,
+      embroidery: json['embroidery'] as String?,
+      accessory: json['accessory'] as String?,
+      tags: json['tags'] != null
+          ? List<String>.from((json['tags'] as List).map((e) => e.toString()))
+          : [],
+      fabricOptions: _parseOptionList(json['fabric_options']),
+      embroideryOptions: _parseOptionList(json['embroidery_options']),
+      finishOptions: _parseOptionList(json['finish_options']),
+      perfectFor: _parseStringList(json['perfect_for']),
+      priceUsd: json['price_usd'] != null
+          ? double.tryParse(json['price_usd'].toString())
+          : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
+          : null,
     );
   }
+}
+
+List<String> _parseStringList(dynamic raw) {
+  if (raw == null) return [];
+  if (raw is List) return raw.map((e) => e.toString()).toList();
+  if (raw is String && raw.trim().isNotEmpty) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) return decoded.map((e) => e.toString()).toList();
+    } catch (_) {}
+  }
+  return [];
+}
+
+List<Map<String, dynamic>> _parseOptionList(dynamic raw) {
+  if (raw == null) return [];
+  if (raw is List) {
+    return raw
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+  if (raw is String && raw.trim().isNotEmpty) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    } catch (_) {}
+  }
+  return [];
 }

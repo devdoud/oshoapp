@@ -90,7 +90,7 @@ class LoginController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 300));
 
       // Show Error Snackbar
-      OLoaders.errorSnackBar(title: 'Login Failed', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Connexion échouée', message: e is String ? e : 'Identifiants incorrects. Veuillez réessayer.');
     }
   }
 
@@ -127,7 +127,7 @@ class LoginController extends GetxController {
       // Increased delay
       await Future.delayed(const Duration(milliseconds: 300));
 
-      OLoaders.errorSnackBar(title: 'Oh Snap', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Une erreur est survenue. Veuillez réessayer.');
     }
   }
 
@@ -136,7 +136,7 @@ class LoginController extends GetxController {
     try {
       await AuthenticationRepository.instance.logout();
     } catch (e) {
-      OLoaders.errorSnackBar(title: 'Oh Snap', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Une erreur est survenue. Veuillez réessayer.');
     }
   }
 }

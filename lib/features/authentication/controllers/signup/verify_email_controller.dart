@@ -26,7 +26,7 @@ class VerifyEmailController extends GetxController {
           title: 'Email sent',
           message: 'Please check your inbox and verify your email.');
     } catch (e) {
-      OLoaders.errorSnackBar(title: 'Oh Snap!', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible d\'envoyer l\'email. Veuillez réessayer.');
     }
   }
 

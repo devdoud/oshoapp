@@ -19,22 +19,12 @@ class CategoryController extends GetxController {
     super.onInit();
   }
 
-  /// -- Load category data
   Future<void> fetchCategories() async {
     try {
       isLoading.value = true;
       final categories = await _catalogRepository.getAllCategories();
-
-      // 🔍 DEBUG: Afficher toutes les catégories récupérées
-      print('🔍 DEBUG: Total categories fetched: ${categories.length}');
-      for (var cat in categories) {
-        print(
-            '   - ID: ${cat.id}, Name: ${cat.name}, isFeatured: ${cat.isFeatured}, parentId: "${cat.parentId}"');
-      }
-
       allCategories.assignAll(categories);
 
-      // Create "Tout" (All) category
       final allCategory = CategoryModel(
         id: 'all',
         name: 'all_categories'.tr,
@@ -42,28 +32,22 @@ class CategoryController extends GetxController {
         isFeatured: true,
       );
 
-      // Get featured categories and prepend "Tout"
       final featured = allCategories
-          .where((category) => category.isFeatured && category.parentId.isEmpty)
-          .take(8)
-          .toList();
+          .where((c) => c.isFeatured && c.parentId.isEmpty)
+          .toList()
+        ..sort((a, b) {
+          final aDate = a.createdAt;
+          final bDate = b.createdAt;
+          if (aDate == null && bDate == null) return 0;
+          if (aDate == null) return 1;
+          if (bDate == null) return -1;
+          return bDate.compareTo(aDate);
+        });
 
-      // 🔍 DEBUG: Afficher les catégories filtrées
-      print('🔍 DEBUG: Featured categories after filter: ${featured.length}');
-      for (var cat in featured) {
-        print('   ✅ ${cat.name}');
-      }
-
-      featuredCategories.assignAll([allCategory, ...featured]);
-
-      print(
-          '📂 Featured categories with "Tout": ${featuredCategories.map((c) => c.name).toList()}');
-
-      // Fetch all products initially (since "Tout" is selected by default)
+      featuredCategories.assignAll([allCategory, ...featured.take(8)]);
       ProductController.instance.fetchAllProducts();
     } catch (e) {
-      print('❌ ERROR fetching categories: $e');
-      OLoaders.errorSnackBar(title: 'Oh Snap!', message: e.toString());
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible de charger les catégories. Veuillez réessayer.');
     } finally {
       isLoading.value = false;
     }

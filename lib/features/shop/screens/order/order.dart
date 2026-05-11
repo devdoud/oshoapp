@@ -3,19 +3,20 @@ import 'package:get/get.dart';
 import 'package:osho/common/widgets/appbar/appbar.dart';
 import 'package:osho/data/repositories/shop/order_repository.dart';
 import 'package:osho/features/shop/screens/order/widgets/order_list.dart';
+import 'package:osho/utils/helpers/helper_functions.dart';
 
 class OrderScreen extends StatelessWidget {
   const OrderScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // S'assure que OrderRepository est enregistré avant le contrôleur
+    final isDark = OHelperFunctions.isDarkMode(context);
     if (!Get.isRegistered<OrderRepository>()) {
       Get.put(OrderRepository());
     }
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Soft background
-      /// --- App Bar
+      backgroundColor:
+          isDark ? const Color(0xFF111111) : const Color(0xFFF8F9FA),
       appBar: OAppBar(
         title: Text("Mes Commandes",
             style: Theme.of(context)
@@ -24,8 +25,6 @@ class OrderScreen extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.bold)),
         showBackArrow: true,
       ),
-
-      /// --- Body
       body: const Padding(
         padding: EdgeInsets.all(24.0),
         child: OOrderListItems(),

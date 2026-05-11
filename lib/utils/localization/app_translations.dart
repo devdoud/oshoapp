@@ -4,10 +4,13 @@ class AppTranslations extends Translations {
   @override
   Map<String, Map<String, String>> get keys => {
         'en_US': {
+          'home_title_discover': 'DISCOVER',
           'home_title_1': 'African fashion ',
           'home_title_2': 'custom-made,\n',
           'home_title_3': 'simple and ',
           'home_title_4': 'fast.',
+          'home_subtitle': 'African fashion, crafted to your measurements.',
+          'featured_products': 'Featured Products',
           'search_hint': 'Search for an outfit...',
           'categories': 'Categories',
           'all_categories': 'All',
@@ -86,10 +89,13 @@ class AppTranslations extends Translations {
           'online': 'Online',
         },
         'fr_FR': {
+          'home_title_discover': 'DÉCOUVRIR',
           'home_title_1': 'Mode africaine ',
           'home_title_2': 'sur mesure,\n',
           'home_title_3': 'simple et ',
           'home_title_4': 'rapide.',
+          'home_subtitle': 'La mode africaine, confectionnée à vos mesures.',
+          'featured_products': 'Produits vedettes',
           'search_hint': 'Rechercher une tenue...',
           'categories': 'Catégories',
           'all_categories': 'Tout',

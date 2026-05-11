@@ -5,17 +5,18 @@ import 'package:osho/features/shop/controllers/order_controller.dart';
 import 'package:osho/features/shop/models/order_model.dart';
 import 'package:osho/features/shop/screens/orders/order_tracking.dart';
 import 'package:osho/utils/constants/sizes.dart';
+import 'package:osho/utils/helpers/helper_functions.dart';
+import 'package:osho/utils/helpers/logistics_calculator.dart';
 
 class OOrderListItems extends StatelessWidget {
   const OOrderListItems({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Initialise le contrôleur si pas encore fait
+    final isDark = OHelperFunctions.isDarkMode(context);
     final controller = Get.put(OrderController());
 
     return Obx(() {
-      // --- État chargement
       if (controller.isLoading.value) {
         return const Center(
           child: Padding(
@@ -25,7 +26,6 @@ class OOrderListItems extends StatelessWidget {
         );
       }
 
-      // --- État erreur
       if (controller.errorMessage.value.isNotEmpty) {
         return Center(
           child: Padding(
@@ -38,7 +38,10 @@ class OOrderListItems extends StatelessWidget {
                 Text(
                   controller.errorMessage.value,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: isDark ? Colors.white60 : Colors.grey[600],
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
@@ -52,7 +55,6 @@ class OOrderListItems extends StatelessWidget {
         );
       }
 
-      // --- État vide
       if (controller.orders.isEmpty) {
         return Center(
           child: Padding(
@@ -63,10 +65,14 @@ class OOrderListItems extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.07)
+                        : const Color(0xFFF3F4F6),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Iconsax.box, size: 48, color: Colors.grey[400]),
+                  child: Icon(Iconsax.box,
+                      size: 48,
+                      color: isDark ? Colors.white38 : Colors.grey[400]),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -74,14 +80,17 @@ class OOrderListItems extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[700],
+                    color: isDark ? Colors.white : Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Vos commandes apparaîtront ici\naprès votre premier achat.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                  style: TextStyle(
+                    color: isDark ? Colors.white38 : Colors.grey[500],
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -89,7 +98,6 @@ class OOrderListItems extends StatelessWidget {
         );
       }
 
-      // --- Liste des commandes
       return RefreshIndicator(
         onRefresh: controller.fetchOrders,
         child: ListView.separated(
@@ -114,17 +122,18 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = OHelperFunctions.isDarkMode(context);
     final styleData = OrderController.statusStyle(order.status);
     final statusColor = Color(styleData['color'] as int);
     final statusText = styleData['label'] as String;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           )
@@ -135,13 +144,12 @@ class _OrderCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // --- En-tête : statut + date + flèche
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(Iconsax.ship, color: statusColor, size: 20),
@@ -162,43 +170,52 @@ class _OrderCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         order.formattedOrderDate,
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        style: TextStyle(
+                          color: isDark ? Colors.white38 : Colors.grey[500],
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                // Montant total
                 Text(
-                  '${order.totalAmount.toStringAsFixed(0)} FCFA',
-                  style: const TextStyle(
+                  OLogisticsCalculator.formatFee(order.totalAmount),
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
                 const SizedBox(width: 4),
                 IconButton(
-                  onPressed: () => Get.to(() => OrderTrackingScreen(order: order)),
+                  onPressed: () =>
+                      Get.to(() => OrderTrackingScreen(order: order)),
                   icon: Icon(
                     Iconsax.arrow_right_3,
                     size: 18,
-                    color: Colors.grey[400],
+                    color: isDark ? Colors.white38 : Colors.grey[400],
                   ),
                 ),
               ],
             ),
 
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child:
-                  Divider(height: 1, thickness: 0.5, color: Color(0xFFEEEEEE)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Divider(
+                height: 1,
+                thickness: 0.5,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : const Color(0xFFEEEEEE),
+              ),
             ),
 
-            // --- Détails : Numéro de commande + nombre d'articles
             Row(
               children: [
                 Expanded(
                   child: _buildDetailItem(
                     context,
+                    isDark,
                     'Numéro de commande',
                     '#${order.id.length > 8 ? order.id.substring(0, 8).toUpperCase() : order.id.toUpperCase()}',
                     Iconsax.tag,
@@ -207,6 +224,7 @@ class _OrderCard extends StatelessWidget {
                 Expanded(
                   child: _buildDetailItem(
                     context,
+                    isDark,
                     'Articles',
                     "${order.items.length} article${order.items.length > 1 ? 's' : ''}",
                     Iconsax.shopping_bag,
@@ -220,11 +238,13 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailItem(
-      BuildContext context, String label, String value, IconData icon) {
+  Widget _buildDetailItem(BuildContext context, bool isDark, String label,
+      String value, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[400]),
+        Icon(icon,
+            size: 16,
+            color: isDark ? Colors.white38 : Colors.grey[400]),
         const SizedBox(width: 8),
         Flexible(
           child: Column(
@@ -232,15 +252,18 @@ class _OrderCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                style: TextStyle(
+                  color: isDark ? Colors.white38 : Colors.grey[500],
+                  fontSize: 10,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color: Colors.black87,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

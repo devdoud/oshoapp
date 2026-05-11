@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:osho/common/widgets/loaders/loader.dart';
 import 'package:osho/features/shop/models/cart_item_model.dart';
 import 'package:osho/features/shop/models/product_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -39,6 +40,8 @@ class CartController extends GetxController {
     super.onClose();
   }
 
+  // ─── Persistence Locale ──────────────────────────────────────────────────
+
   void _loadCart() {
     final data = _storage.read('cart_items');
     if (data is List) {
@@ -53,6 +56,8 @@ class CartController extends GetxController {
     _storage.write('cart_items', items.map((e) => e.toJson()).toList());
   }
 
+  // ─── Computed ────────────────────────────────────────────────────────────
+
   int get totalItems => items.fold(0, (sum, item) => sum + item.quantity);
 
   double get subtotal => items.fold(0.0, (sum, item) => sum + item.lineTotal);
@@ -61,10 +66,19 @@ class CartController extends GetxController {
     return items.any((item) => item.productId == productId);
   }
 
+  // ─── Actions ─────────────────────────────────────────────────────────────
+
+  /// Ajoute un produit au panier.
+  /// Les specs du produit (tissu, broderie, accessoire) sont automatiquement
+  /// incluses dans [customizationDetails] et transmises au tailleur.
   Future<void> addItem(ProductModel product, {int quantity = 1}) async {
+    // Construire les customizationDetails depuis les specs fixes du produit
+    final details = _buildDetailsFromProduct(product);
+
     final index = items.indexWhere((i) => i.productId == product.id);
     if (index >= 0) {
       items[index].quantity += quantity;
+      items.refresh();
     } else {
       items.add(CartItemModel(
         productId: product.id,
@@ -72,16 +86,43 @@ class CartController extends GetxController {
         price: product.price,
         image: product.thumbnail,
         quantity: quantity,
+        customizationDetails: details,
       ));
     }
-    items.refresh();
     _saveCart();
 
+    // Sync remote (silencieux en cas d'erreur — le panier local est déjà sauvegardé)
     final userId = _supabase.auth.currentUser?.id;
     if (userId != null) {
       final item = index >= 0 ? items[index] : items.last;
-      await _upsertRemoteItem(userId, item);
+      try {
+        await _upsertRemoteItem(userId, item);
+      } catch (e) {
+        // L'item est déjà dans le panier local. La sync se fera au prochain login.
+        OLoaders.warningSnackBar(
+          title: 'Sync panier',
+          message: 'Ajouté localement. Synchronisation en arrière-plan.',
+        );
+      }
     }
+  }
+
+  /// Construit les détails de personnalisation à partir des specs du produit.
+  Map<String, dynamic> _buildDetailsFromProduct(ProductModel product) {
+    final map = <String, dynamic>{
+      'type': 'cart',
+      'genre': product.categoryType ?? '',
+    };
+    if (product.fabric != null && product.fabric!.isNotEmpty) {
+      map['tissu'] = product.fabric;
+    }
+    if (product.embroidery != null && product.embroidery!.isNotEmpty) {
+      map['broderie'] = product.embroidery;
+    }
+    if (product.accessory != null && product.accessory!.isNotEmpty) {
+      map['accessoire'] = product.accessory;
+    }
+    return map;
   }
 
   Future<void> updateQuantity(String productId, int newQuantity) async {
@@ -98,10 +139,14 @@ class CartController extends GetxController {
 
     final userId = _supabase.auth.currentUser?.id;
     if (userId != null) {
-      if (newQuantity <= 0) {
-        await _deleteRemoteItem(userId, productId);
-      } else {
-        await _upsertRemoteItem(userId, items[index]);
+      try {
+        if (newQuantity <= 0) {
+          await _deleteRemoteItem(userId, productId);
+        } else {
+          await _upsertRemoteItem(userId, items[index]);
+        }
+      } catch (_) {
+        // Silencieux — panier local à jour
       }
     }
   }
@@ -113,7 +158,11 @@ class CartController extends GetxController {
 
     final userId = _supabase.auth.currentUser?.id;
     if (userId != null) {
-      await _deleteRemoteItem(userId, productId);
+      try {
+        await _deleteRemoteItem(userId, productId);
+      } catch (_) {
+        // Silencieux
+      }
     }
   }
 
@@ -123,9 +172,15 @@ class CartController extends GetxController {
 
     final userId = _supabase.auth.currentUser?.id;
     if (userId != null) {
-      await _clearRemote(userId);
+      try {
+        await _clearRemote(userId);
+      } catch (_) {
+        // Silencieux
+      }
     }
   }
+
+  // ─── Remote Sync ─────────────────────────────────────────────────────────
 
   Future<void> _syncWithRemote(String userId) async {
     if (_isSyncing) return;
@@ -144,7 +199,7 @@ class CartController extends GetxController {
             );
       }
     } catch (_) {
-      // Keep local cart if remote sync fails.
+      // Conserver le panier local si la sync échoue
     } finally {
       _isSyncing = false;
     }
@@ -162,10 +217,11 @@ class CartController extends GetxController {
               Map<String, dynamic>.from(e as Map)))
           .toList();
     }
-
     return [];
   }
 
+  /// Merge remote + local : en cas de doublon, on prend la quantité MAX
+  /// (remote est source de vérité) pour éviter la duplication au re-login.
   List<CartItemModel> _mergeItems(
       List<CartItemModel> remote, List<CartItemModel> local) {
     final map = <String, CartItemModel>{
@@ -175,11 +231,18 @@ class CartController extends GetxController {
     for (final item in local) {
       if (map.containsKey(item.productId)) {
         final existing = map[item.productId]!;
+        // FIX : on prend le MAX des quantités plutôt que de les sommer
+        // pour éviter la duplication au re-login.
         map[item.productId] = existing.copyWith(
-          quantity: existing.quantity + item.quantity,
+          quantity: existing.quantity >= item.quantity
+              ? existing.quantity
+              : item.quantity,
           price: existing.price > 0 ? existing.price : item.price,
           title: existing.title.isNotEmpty ? existing.title : item.title,
           image: existing.image.isNotEmpty ? existing.image : item.image,
+          // Conserver les specs si le remote n'en a pas
+          customizationDetails:
+              existing.customizationDetails ?? item.customizationDetails,
         );
       } else {
         map[item.productId] = item;

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:osho/common/widgets/loaders/loader.dart';
-import 'package:osho/features/measurement/screens/measurement_tutorial.dart';
+import 'package:osho/features/measurement/models/standard_size_model.dart';
 import 'package:osho/features/personalization/controllers/measurement_controller.dart';
 import 'package:osho/features/personalization/models/measurement_profile_model.dart';
+import 'package:osho/navigation_menu.dart';
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/sizes.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
@@ -40,6 +42,8 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
   final _inseamController = TextEditingController();
 
   String _selectedGender = 'femme';
+  String? _selectedTopSize;
+  String? _selectedBottomSize;
 
   List<TextEditingController> get _measurementControllers => [
         _heightController,
@@ -100,6 +104,42 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
     if (mounted) setState(() {});
   }
 
+  void _applyTopSize(StandardSize size) {
+    setState(() {
+      _selectedTopSize = size.size;
+      if (size.height != null) _heightController.text = size.height!.toStringAsFixed(0);
+      if (size.weight != null) _weightController.text = size.weight!.toStringAsFixed(0);
+      _neckController.text = size.neck.toStringAsFixed(0);
+      _chestController.text = size.chest.toStringAsFixed(0);
+      _shoulderController.text = size.shoulder.toStringAsFixed(0);
+      _sleeveController.text = size.sleeve.toStringAsFixed(0);
+    });
+  }
+
+  void _applyBottomSize(StandardSize size) {
+    setState(() {
+      _selectedBottomSize = size.size;
+      _waistController.text = size.waist.toStringAsFixed(0);
+      if (size.hips != null) _hipsController.text = size.hips!.toStringAsFixed(0);
+      _inseamController.text = size.inseam.toStringAsFixed(0);
+    });
+  }
+
+  String _buildSelectionLabel() {
+    if (_selectedTopSize != null && _selectedBottomSize != null) {
+      return 'Haut $_selectedTopSize · Bas $_selectedBottomSize appliques. Ajustez si necessaire.';
+    } else if (_selectedTopSize != null) {
+      return 'Haut $_selectedTopSize applique. Selectionnez aussi une taille bas.';
+    } else {
+      return 'Bas $_selectedBottomSize applique. Selectionnez aussi une taille haut.';
+    }
+  }
+
+  void _goToHome() {
+    final navController = Get.find<NavigationController>();
+    navController.selectedIndex.value = 0;
+  }
+
   int _completedFieldsCount() {
     var completed = _nameController.text.trim().isNotEmpty ? 1 : 0;
     for (final controller in _measurementControllers) {
@@ -107,8 +147,6 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
     }
     return completed;
   }
-
-  double _completionProgress() => _completedFieldsCount() / 10;
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
@@ -124,12 +162,16 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
       return;
     }
 
+    final isEditing = widget.profile != null;
+    final hasOtherProfiles = controller.userMeasurements.any((p) => p.id != widget.profile?.id);
+    final isPrimary = isEditing ? widget.profile!.isPrimary : !hasOtherProfiles;
+
     final profile = MeasurementProfileModel(
       id: widget.profile?.id,
       userId: userId,
       profileName: _nameController.text.trim(),
       gender: _selectedGender,
-      isPrimary: true,
+      isPrimary: isPrimary,
       height: double.tryParse(_heightController.text),
       weight: double.tryParse(_weightController.text),
       neck: double.tryParse(_neckController.text),
@@ -159,59 +201,47 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
   Widget build(BuildContext context) {
     final isDark = OHelperFunctions.isDarkMode(context);
     final completedFields = _completedFieldsCount();
-    final progress = _completionProgress();
     final pageColor = isDark ? const Color(0xFF0E0E11) : const Color(0xFFF6F1EB);
     final cardColor = isDark ? const Color(0xFF17171B) : Colors.white;
     final mutedColor = isDark ? Colors.white70 : const Color(0xFF6A645C);
 
-    return Scaffold(
-      backgroundColor: pageColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: widget.allowBack
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                onPressed: () => Get.back(),
-              )
-            : null,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Mes Mesures',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            Text(
-              widget.profile == null ? 'Composez votre profil sur mesure' : 'Affinez votre profil existant',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: mutedColor),
-            ),
-          ],
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
-              ),
-            ),
-            child: IconButton(
-              onPressed: () => Get.to(
-                () => MeasurementTutorialScreen(
-                  allowBack: widget.allowBack,
-                  returnToCheckout: widget.returnToCheckout,
+    return PopScope(
+      canPop: widget.allowBack,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !widget.allowBack) _goToHome();
+      },
+      child: Scaffold(
+        backgroundColor: pageColor,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          systemOverlayStyle: isDark
+              ? SystemUiOverlayStyle.light
+              : const SystemUiOverlayStyle(
+                  statusBarColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.dark,
+                  statusBarBrightness: Brightness.light,
                 ),
-              ),
-              icon: const Icon(Iconsax.video_circle, color: OColors.primary),
-              tooltip: 'Voir le tutoriel',
-            ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            tooltip: 'Retour',
+            onPressed: () => Get.back(),
           ),
-        ],
-      ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Mes Mesures',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              Text(
+                widget.profile == null ? 'Composez votre profil sur mesure' : 'Affinez votre profil existant',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: mutedColor),
+              ),
+            ],
+          ),
+        ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(OSizes.defaultPadding, 8, OSizes.defaultPadding, 150),
         child: Form(
@@ -219,14 +249,6 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeroCard(
-                context,
-                isDark: isDark,
-                cardColor: cardColor,
-                completedFields: completedFields,
-                progress: progress,
-              ),
-              const SizedBox(height: 20),
               _buildSectionCard(
                 context,
                 title: 'Identite du profil',
@@ -272,6 +294,13 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
                 ),
               ),
               const SizedBox(height: 18),
+              _buildStandardSizesCard(
+                context,
+                isDark: isDark,
+                cardColor: cardColor,
+                pageColor: pageColor,
+              ),
+              const SizedBox(height: 18),
               _buildSectionCard(
                 context,
                 title: 'Silhouette generale',
@@ -311,7 +340,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
               _buildSectionCard(
                 context,
                 title: 'Mensurations precises',
-                subtitle: 'Prenez chaque mesure calmement. Le tutoriel video reste accessible en haut.',
+                subtitle: 'Prenez chaque mesure calmement avec un metre ruban souple.',
                 cardColor: cardColor,
                 child: Column(
                   children: [
@@ -493,180 +522,6 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeroCard(
-    BuildContext context, {
-    required bool isDark,
-    required Color cardColor,
-    required int completedFields,
-    required double progress,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark ? const [Color(0xFF2D2D35), Color(0xFF111114)] : const [Color(0xFF25221D), Color(0xFF111111)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.16),
-            blurRadius: 26,
-            offset: const Offset(0, 14),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(Iconsax.ruler, color: Colors.white),
-              ),
-              const Spacer(),
-              _buildCapsule(
-                label: widget.profile == null ? 'Nouveau profil' : 'Edition',
-                icon: Iconsax.flash_1,
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Un profil net pour des tenues qui tombent juste.',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Renseignez chaque valeur une fois. Le tailleur partira ensuite sur une base propre et exploitable.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.78),
-                  height: 1.45,
-                ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Progression',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: Colors.white.withOpacity(0.72),
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 8,
-                          backgroundColor: Colors.white.withOpacity(0.12),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFCC66)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$completedFields/10',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: OColors.primary,
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                    Text(
-                      'renseignes',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: OColors.grey,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: cardColor.withOpacity(isDark ? 0.18 : 0.12),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withOpacity(0.06)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Iconsax.video_play, color: Color(0xFFFFCC66), size: 18),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Besoin d aide ? Ouvrez le tutoriel video depuis l icone en haut a droite.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withOpacity(0.78),
-                        ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCapsule({required String label, required IconData icon}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFFFFCC66), size: 14),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -814,7 +669,11 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
 
     return InkWell(
       borderRadius: BorderRadius.circular(22),
-      onTap: () => setState(() => _selectedGender = gender),
+      onTap: () => setState(() {
+        _selectedGender = gender;
+        _selectedTopSize = null;
+        _selectedBottomSize = null;
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         padding: const EdgeInsets.all(18),
@@ -916,6 +775,150 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStandardSizesCard(
+    BuildContext context, {
+    required bool isDark,
+    required Color cardColor,
+    required Color pageColor,
+  }) {
+    final topSizes = StandardSizes.getTopSizesByGender(_selectedGender);
+    final bottomSizes = StandardSizes.getBottomSizesByGender(_selectedGender);
+    final hasSelection = _selectedTopSize != null || _selectedBottomSize != null;
+
+    return _buildSectionCard(
+      context,
+      title: 'Tailles standards',
+      subtitle: 'Choisissez votre taille haut et bas pour pre-remplir automatiquement vos mesures.',
+      cardColor: cardColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Haut du corps',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white70 : const Color(0xFF6A645C),
+                ),
+          ),
+          const SizedBox(height: 8),
+          _buildSizeChips(
+            context,
+            sizes: topSizes,
+            selectedSize: _selectedTopSize,
+            isDark: isDark,
+            onSelect: _applyTopSize,
+            sublabel: (s) => 'poitrine ${s.chest.toStringAsFixed(0)}cm',
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Bas du corps',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white70 : const Color(0xFF6A645C),
+                ),
+          ),
+          const SizedBox(height: 8),
+          _buildSizeChips(
+            context,
+            sizes: bottomSizes,
+            selectedSize: _selectedBottomSize,
+            isDark: isDark,
+            onSelect: _applyBottomSize,
+            sublabel: (s) => 'taille ${s.waist.toStringAsFixed(0)}cm',
+          ),
+          if (hasSelection) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: OColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: OColors.primary.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Iconsax.tick_circle, color: OColors.primary, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _buildSelectionLabel(),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: OColors.primary,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSizeChips(
+    BuildContext context, {
+    required List<StandardSize> sizes,
+    required String? selectedSize,
+    required bool isDark,
+    required void Function(StandardSize) onSelect,
+    String? Function(StandardSize)? sublabel,
+  }) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: sizes.map((size) {
+        final isSelected = selectedSize == size.size;
+        final sub = sublabel?.call(size);
+        return InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => onSelect(size),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: isSelected
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [OColors.primary, OColors.primary.withOpacity(0.78)],
+                    )
+                  : null,
+              color: isSelected ? null : (isDark ? Colors.white.withOpacity(0.03) : const Color(0xFFF9F5EF)),
+              border: Border.all(
+                color: isSelected
+                    ? Colors.transparent
+                    : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  size.size,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: isSelected ? Colors.white : OColors.primary,
+                      ),
+                ),
+                if (sub != null)
+                  Text(
+                    sub,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isSelected
+                              ? Colors.white.withOpacity(0.76)
+                              : (isDark ? Colors.white60 : const Color(0xFF7A736B)),
+                        ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

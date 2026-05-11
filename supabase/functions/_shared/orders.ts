@@ -1,4 +1,3 @@
-import { JWT } from "https://esm.sh/google-auth-library@9";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export interface CheckoutItemPayload {
@@ -41,30 +40,6 @@ interface OrderRow {
   created_at: string;
   payment_method?: string | null;
   primary_tailor_id?: string | null;
-}
-
-const DEFAULT_TAILOR_NOTIFICATION_BATCH_SIZE = 5;
-
-function pickBatchSize() {
-  const rawValue = Deno.env.get("TAILOR_NOTIFICATION_BATCH_SIZE");
-  const parsed = rawValue ? Number(rawValue) : DEFAULT_TAILOR_NOTIFICATION_BATCH_SIZE;
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return DEFAULT_TAILOR_NOTIFICATION_BATCH_SIZE;
-  }
-
-  return Math.floor(parsed);
-}
-
-function shuffleArray<T>(items: T[]) {
-  const copy = [...items];
-
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
-  }
-
-  return copy;
 }
 
 function asRecord(value: unknown, fieldName: string): Record<string, unknown> {
@@ -244,284 +219,27 @@ async function fetchOrderWithItems(supabase: SupabaseClient, orderId: string) {
   return data;
 }
 
-async function getGoogleAccessToken() {
-  const clientEmail = Deno.env.get("FCM_CLIENT_EMAIL");
-  const privateKey = Deno.env.get("FCM_PRIVATE_KEY")?.replace(/\\n/g, "\n");
-
-  if (!clientEmail || !privateKey) {
-    throw new Error("FCM service account credentials are not configured.");
-  }
-
-  const client = new JWT({
-    email: clientEmail,
-    key: privateKey,
-    scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-  });
-
-  const token = await client.getAccessToken();
-  if (!token.token) {
-    throw new Error("Unable to obtain Google access token.");
-  }
-
-  return token.token;
-}
-
 export async function notifyTailorsForOrder(
   supabase: SupabaseClient,
   orderId: string,
-  options: { force?: boolean } = {},
+  _options: { force?: boolean } = {},
 ) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select(
-      "id, user_id, total_amount, status, created_at, shipping_address, primary_tailor_id",
-    )
+    .select("id")
     .eq("id", orderId)
-    .single<OrderRow>();
+    .single<{ id: string }>();
 
   if (orderError || !order) {
-    throw new Error(`Unable to find order ${orderId} for notification.`);
-  }
-
-  if (order.primary_tailor_id && !options.force) {
-    return {
-      success: true,
-      order_id: orderId,
-      already_assigned: true,
-      notifications_sent: 0,
-      results: [],
-    };
-  }
-
-  const { data: attempt } = await supabase
-    .from("payment_attempts")
-    .select("id, notified_at")
-    .eq("order_id", orderId)
-    .maybeSingle<{ id: string; notified_at: string | null }>();
-
-  if (attempt?.notified_at && !options.force) {
-    return {
-      success: true,
-      order_id: orderId,
-      already_notified: true,
-      notifications_sent: 0,
-      results: [],
-    };
-  }
-
-  const { data: tailors, error: tailorError } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("role", "tailor");
-
-  if (tailorError) {
-    throw new Error(`Unable to load tailor profiles: ${tailorError.message}`);
-  }
-
-  if (!tailors || tailors.length === 0) {
-    return {
-      success: true,
-      order_id: orderId,
-      notifications_sent: 0,
-      results: [],
-      message: "No tailor profiles found.",
-    };
-  }
-
-  const { data: tailorTokens, error: tokenError } = await supabase
-    .from("tailor_tokens")
-    .select("token, tailor_id")
-    .in("tailor_id", tailors.map((tailor) => tailor.id));
-
-  if (tokenError) {
-    throw new Error(`Unable to load tailor tokens: ${tokenError.message}`);
-  }
-
-  if (!tailorTokens || tailorTokens.length === 0) {
-    return {
-      success: true,
-      order_id: orderId,
-      notifications_sent: 0,
-      results: [],
-      message: "No registered FCM tokens for tailors.",
-    };
-  }
-
-  const candidateTailorIds = [...new Set(
-    tailorTokens.map((item) => item.tailor_id).filter((value): value is string =>
-      typeof value === "string" && value.length > 0
-    ),
-  )];
-
-  if (candidateTailorIds.length === 0) {
-    return {
-      success: true,
-      order_id: orderId,
-      notifications_sent: 0,
-      results: [],
-      message: "No valid tailor IDs attached to push tokens.",
-    };
-  }
-
-  const { data: busyAssignments, error: busyAssignmentsError } = await supabase
-    .from("order_assignments")
-    .select("tailor_id")
-    .in("tailor_id", candidateTailorIds)
-    .in("status", ["accepted", "in_progress"]);
-
-  if (busyAssignmentsError) {
-    throw new Error(
-      `Unable to load active tailor assignments: ${busyAssignmentsError.message}`,
-    );
-  }
-
-  const busyTailorIds = new Set(
-    (busyAssignments ?? [])
-      .map((assignment) => assignment.tailor_id)
-      .filter((value): value is string => typeof value === "string" && value.length > 0),
-  );
-
-  const availableTailorIds = candidateTailorIds.filter((tailorId) =>
-    !busyTailorIds.has(tailorId)
-  );
-
-  if (availableTailorIds.length === 0) {
-    return {
-      success: true,
-      order_id: orderId,
-      notifications_sent: 0,
-      results: [],
-      message: "No available tailors found for this order.",
-    };
-  }
-
-  const selectedTailorIds = shuffleArray(availableTailorIds).slice(
-    0,
-    pickBatchSize(),
-  );
-
-  const assignments = selectedTailorIds.map((tailorId) => ({
-    order_id: orderId,
-    tailor_id: tailorId,
-    status: "pending",
-  }));
-
-  const { error: assignError } = await supabase
-    .from("order_assignments")
-    .upsert(assignments, { onConflict: "order_id,tailor_id" });
-
-  if (assignError) {
-    throw new Error(`Unable to create assignments: ${assignError.message}`);
-  }
-
-  const selectedTokenRows = tailorTokens.filter((tokenRow) =>
-    selectedTailorIds.includes(tokenRow.tailor_id)
-  );
-
-  const { data: orderItems, error: itemsError } = await supabase
-    .from("order_items")
-    .select("quantity")
-    .eq("order_id", orderId);
-
-  if (itemsError) {
-    throw new Error(`Unable to load order items: ${itemsError.message}`);
-  }
-
-  const itemCount =
-    orderItems?.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0) ?? 0;
-  const projectId = Deno.env.get("FCM_PROJECT_ID");
-  if (!projectId) {
-    throw new Error("FCM_PROJECT_ID is not configured.");
-  }
-
-  const accessToken = await getGoogleAccessToken();
-  const results: Array<Record<string, unknown>> = [];
-
-  for (const tailorToken of selectedTokenRows) {
-    try {
-      const response = await fetch(
-        `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message: {
-              token: tailorToken.token,
-              notification: {
-                title: "Nouvelle commande payee",
-                body: `${itemCount} article(s) | ${order.total_amount} FCFA`,
-              },
-              android: {
-                priority: "HIGH",
-                notification: {
-                  channel_id: "tailor_orders",
-                  sound: "new_order",
-                  priority: "PRIORITY_MAX",
-                  default_sound: false,
-                },
-              },
-              apns: {
-                payload: {
-                  aps: {
-                    sound: "new_order.caf",
-                    badge: 1,
-                    "content-available": 1,
-                  },
-                },
-              },
-              data: {
-                type: "new_order",
-                order_id: orderId,
-                total_amount: `${order.total_amount}`,
-                item_count: `${itemCount}`,
-                status: order.status,
-                click_action: "FLUTTER_NOTIFICATION_CLICK",
-              },
-            },
-          }),
-        },
-      );
-
-      const data = await response.json();
-      results.push({
-        tailor_id: tailorToken.tailor_id,
-        status: response.ok ? "sent" : "failed",
-        message: response.ok
-          ? "Notification sent"
-          : data?.error?.message ?? "Unknown FCM error",
-      });
-    } catch (error) {
-      results.push({
-        tailor_id: tailorToken.tailor_id,
-        status: "error",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }
-
-  const sentCount = results.filter((result) => result.status === "sent").length;
-  if (sentCount > 0 && attempt?.id != null) {
-    const { error } = await supabase
-      .from("payment_attempts")
-      .update({ notified_at: new Date().toISOString() })
-      .eq("id", attempt.id);
-
-    if (error) {
-      throw new Error(`Unable to persist notification state: ${error.message}`);
-    }
+    throw new Error(`Unable to find order ${orderId}.`);
   }
 
   return {
     success: true,
     order_id: orderId,
-    candidate_tailors: candidateTailorIds.length,
-    available_tailors: availableTailorIds.length,
-    selected_tailors: selectedTailorIds.length,
-    notifications_sent: sentCount,
-    results,
+    message: "Assignment is handled manually by admin via Supabase.",
+    notifications_sent: 0,
+    results: [],
   };
 }
 
@@ -625,22 +343,18 @@ export async function createOrderFromPaymentAttempt(
     throw new Error(`Unable to update payment attempt: ${attemptError.message}`);
   }
 
-  let notifyResult: Record<string, unknown>;
-  try {
-    notifyResult = await notifyTailorsForOrder(supabase, order.id);
-  } catch (error) {
-    notifyResult = {
-      success: false,
-      order_id: order.id,
-      error: error instanceof Error ? error.message : 'Notification failed',
-    };
-  }
   const completedOrder = await fetchOrderWithItems(supabase, order.id);
 
   return {
     order: completedOrder,
     created: true,
-    notify_result: notifyResult,
+    notify_result: {
+      success: true,
+      order_id: order.id,
+      message: "Assignment is handled manually by admin via Supabase.",
+      notifications_sent: 0,
+      results: [],
+    },
   };
 }
 

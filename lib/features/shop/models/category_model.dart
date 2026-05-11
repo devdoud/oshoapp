@@ -9,12 +9,15 @@ class CategoryModel {
   String parentId;
   bool isFeatured;
 
+  DateTime? createdAt;
+
   CategoryModel({
     required this.id,
     required this.name,
     required this.image,
     this.parentId = '',
     required this.isFeatured,
+    this.createdAt,
   });
 
   /// Empty Helper Function
@@ -100,7 +103,10 @@ class CategoryModel {
       isFeatured: json['is_featured'] ??
           json['isFeatured'] ??
           json['isActive'] ??
-          false, // Support snake_case ET camelCase
+          false,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
+          : null,
     );
   }
 }
