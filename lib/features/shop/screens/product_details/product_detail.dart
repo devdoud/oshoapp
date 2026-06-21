@@ -140,8 +140,6 @@ class _ProductDetailState extends State<ProductDetail> {
                           const SizedBox(height: 12),
                           _buildProductTags(product.tags, isDark),
                         ],
-                        const SizedBox(height: 20),
-                        _buildCraftDetailsCard(context, isDark, surfaceColor),
                         const SizedBox(height: 24),
                         _sectionTitle(context, 'story_title'.tr),
                         const SizedBox(height: 12),
@@ -386,151 +384,6 @@ class _ProductDetailState extends State<ProductDetail> {
     );
   }
 
-  Widget _buildCraftDetailsCard(
-      BuildContext context, bool isDark, Color surfaceColor) {
-    final model = _firstAvailable([
-      product.categoryStyle,
-      product.categoryName,
-      product.categoryType,
-      product.title,
-    ]);
-    final details = [
-      _CraftDetail(
-        icon: Iconsax.shapes,
-        label: 'material'.tr,
-        value: _cleanValue(product.fabric),
-      ),
-      _CraftDetail(
-        icon: Iconsax.picture_frame,
-        label: 'model_label'.tr,
-        value: model,
-      ),
-      _CraftDetail(
-        icon: Iconsax.magicpen,
-        label: 'embroidery'.tr,
-        value: _cleanValue(product.embroidery),
-      ),
-      _CraftDetail(
-        icon: Iconsax.tick_circle,
-        label: 'finishing_label'.tr,
-        value: _cleanValue(product.accessory),
-      ),
-      if (product.estimatedDays != null && product.estimatedDays! > 0)
-        _CraftDetail(
-          icon: Iconsax.timer_1,
-          label: 'crafting_time_label'.tr,
-          value: 'days_value'.trParams({'count': '${product.estimatedDays}'}),
-        ),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : OColors.primary.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Iconsax.category,
-                    color: isDark ? Colors.white : OColors.primary, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'craft_title'.tr,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800, fontSize: 15),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'craft_subtitle'.tr,
-                      style: TextStyle(
-                        color: isDark ? Colors.white60 : Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final itemWidth = (constraints.maxWidth - 10) / 2;
-              return Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: details
-                    .map((detail) => SizedBox(
-                          width: itemWidth,
-                          child: _buildCraftDetailTile(detail, isDark),
-                        ))
-                    .toList(),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCraftDetailTile(_CraftDetail detail, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : OColors.primary.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(detail.icon,
-              size: 16, color: isDark ? Colors.white70 : OColors.primary),
-          const SizedBox(height: 8),
-          Text(
-            detail.label,
-            style: TextStyle(
-              color: isDark ? Colors.white60 : Colors.grey[600],
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            detail.value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF242424),
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              height: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildProductTags(List<String> tags, bool isDark) {
     return Wrap(
@@ -813,20 +666,6 @@ class _ProductDetailState extends State<ProductDetail> {
         ),
       ],
     );
-  }
-
-  String _cleanValue(String? value) {
-    final cleaned = value?.trim();
-    if (cleaned == null || cleaned.isEmpty) return 'A preciser';
-    return cleaned;
-  }
-
-  String _firstAvailable(List<String?> values) {
-    for (final value in values) {
-      final cleaned = value?.trim();
-      if (cleaned != null && cleaned.isNotEmpty) return cleaned;
-    }
-    return 'A preciser';
   }
 
   void _showProfileSelectionSheet(BuildContext context, {required String action}) {
@@ -1400,9 +1239,3 @@ class _ProfileSelectionSheetState extends State<_ProfileSelectionSheet> {
   }
 }
 
-class _CraftDetail {
-  const _CraftDetail({required this.icon, required this.label, required this.value});
-  final IconData icon;
-  final String label;
-  final String value;
-}
