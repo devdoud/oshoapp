@@ -71,8 +71,11 @@ class _CustomModelStep1State extends State<CustomModelStep1> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Filtres catégorie (uniquement s'il y en a plusieurs)
-        if (controller.fabricCategories.length > 1) ...[
+        // Filtres catégorie : masqués quand fabricType est verrouillé sur un produit
+        // (les options sont déjà filtrées côté controller) ou s'il n'y en a qu'un
+        if (controller.fabricType.value.isEmpty &&
+            controller.productFabricOptions.isEmpty &&
+            controller.fabricCategories.length > 1) ...[
           SizedBox(
             height: 34,
             child: ListView.separated(

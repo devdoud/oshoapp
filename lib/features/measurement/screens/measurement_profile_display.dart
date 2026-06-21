@@ -1,15 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:osho/features/measurement/screens/manual_measurement_entry.dart';
 import 'package:osho/features/personalization/controllers/measurement_controller.dart';
 import 'package:osho/features/personalization/models/measurement_profile_model.dart';
 import 'package:osho/utils/constants/colors.dart';
-import 'package:flutter/services.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
 
 class MeasurementProfileDisplayScreen extends StatelessWidget {
   const MeasurementProfileDisplayScreen({super.key});
+
+  // Nombre de champs de mesure que le profil peut contenir
+  static const int _totalFields = 14; // neck, chest, waist, hips, shoulder, sleeve, inseam, upper_arm, back_length, dress_length, thigh, trouser_length, bust_height + height
+
+  int _completedCount(MeasurementProfileModel p) {
+    int count = 0;
+    if (p.height != null) count++;
+    if (p.neck != null) count++;
+    if (p.chest != null) count++;
+    if (p.waist != null) count++;
+    if (p.hips != null) count++;
+    if (p.shoulder != null) count++;
+    if (p.sleeve != null) count++;
+    if (p.inseam != null) count++;
+    if (p.upperArm != null) count++;
+    if (p.backLength != null) count++;
+    if (p.dressLength != null) count++;
+    if (p.thigh != null) count++;
+    if (p.trouserLength != null) count++;
+    if (p.bustHeight != null) count++;
+    return count;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,60 +39,36 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
     final controller = MeasurementController.instance;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
+      value: isDark
+          ? SystemUiOverlayStyle.light
+              .copyWith(statusBarColor: Colors.transparent)
+          : SystemUiOverlayStyle.dark
+              .copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
-        backgroundColor: isDark ? Colors.black : const Color(0xFFF8F6F3),
+        backgroundColor:
+            isDark ? const Color(0xFF111111) : const Color(0xFFF8F6F3),
         body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Header ──────────────────────────────────────────────
-              Container(
-                color: isDark ? const Color(0xFF1A1A1E) : Colors.white,
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
                 child: Row(
                   children: [
-                    // Back button
-                    GestureDetector(
-                      onTap: () => Get.back(),
-                      child: Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF2A2A2E)
-                              : const Color(0xFFF8F6F3),
-                          borderRadius: BorderRadius.circular(12),
-                          border:
-                              Border.all(color: const Color(0xFFEEEBE6)),
-                        ),
-                        child: Icon(
-                          Iconsax.arrow_left_2,
-                          size: 17,
-                          color: isDark
-                              ? Colors.white70
-                              : const Color(0xFF4A4542),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         'Mes mesures',
                         style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color:
-                              isDark ? Colors.white : const Color(0xFF1A1A1A),
-                          fontFamily: 'DMSans',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1A1A1A),
                         ),
                       ),
                     ),
-                    // Nouveau profil
                     GestureDetector(
                       onTap: () =>
                           Get.to(() => const ManualMeasurementEntryScreen()),
@@ -78,19 +76,29 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 9),
                         decoration: BoxDecoration(
-                          color: OColors.primary,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1A1A1A),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Iconsax.add, size: 15, color: Colors.white),
-                            SizedBox(width: 6),
+                            Icon(
+                              Iconsax.add,
+                              size: 14,
+                              color: isDark
+                                  ? const Color(0xFF1A1A1A)
+                                  : Colors.white,
+                            ),
+                            const SizedBox(width: 5),
                             Text(
                               'Nouveau',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: isDark
+                                    ? const Color(0xFF1A1A1A)
+                                    : Colors.white,
                               ),
                             ),
                           ],
@@ -106,8 +114,9 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
                 child: Obx(() {
                   if (controller.isLoading.value) {
                     return const Center(
-                        child: CircularProgressIndicator(
-                            color: OColors.primary));
+                      child: CircularProgressIndicator(
+                          color: OColors.primary),
+                    );
                   }
 
                   if (controller.userMeasurements.isEmpty) {
@@ -115,28 +124,30 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
                   }
 
                   return ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                    padding:
+                        const EdgeInsets.fromLTRB(20, 4, 20, 32),
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.only(bottom: 16),
                         child: Text(
                           '${controller.userMeasurements.length} profil${controller.userMeasurements.length > 1 ? 's' : ''} enregistré${controller.userMeasurements.length > 1 ? 's' : ''}',
                           style: TextStyle(
-                            color: isDark
-                                ? Colors.white54
-                                : const Color(0xFF888480),
                             fontSize: 13,
+                            color: isDark
+                                ? Colors.white38
+                                : const Color(0xFFB0AAA2),
                           ),
                         ),
                       ),
                       ...controller.userMeasurements.map(
                         (profile) => Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.only(bottom: 12),
                           child: _buildProfileCard(
                               context, profile, controller, isDark),
                         ),
                       ),
-                      _buildAddProfileCard(isDark),
+                      const SizedBox(height: 4),
+                      _buildAddCard(isDark),
                     ],
                   );
                 }),
@@ -148,110 +159,7 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAddProfileCard(bool isDark) {
-    return GestureDetector(
-      onTap: () => Get.to(() => const ManualMeasurementEntryScreen()),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A1A1E) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: OColors.primary.withValues(alpha: 0.22),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: OColors.primary.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Iconsax.add, size: 15, color: OColors.primary),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'Créer un nouveau profil',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: OColors.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, bool isDark) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(26),
-              decoration: BoxDecoration(
-                color: OColors.primary.withValues(alpha: 0.07),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Iconsax.ruler, size: 52, color: OColors.primary),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Aucun profil de mesure',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Créez votre premier profil pour que nos tailleurs puissent confectionner vos vêtements sur mesure.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF888480),
-                    height: 1.5,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            GestureDetector(
-              onTap: () => Get.to(() => const ManualMeasurementEntryScreen()),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 28, vertical: 15),
-                decoration: BoxDecoration(
-                  color: OColors.primary,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Iconsax.ruler, size: 17, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text(
-                      'Créer mon profil',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // ── Profile card ─────────────────────────────────────────────────────────────
 
   Widget _buildProfileCard(
     BuildContext context,
@@ -259,25 +167,30 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
     MeasurementController controller,
     bool isDark,
   ) {
+    final completed = _completedCount(profile);
+    final progress = completed / _totalFields;
+    final cardBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final isPrimary = profile.isPrimary;
+
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1E) : Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: profile.isPrimary
-              ? OColors.primary.withValues(alpha: 0.28)
+          color: isPrimary
+              ? OColors.primary.withValues(alpha: 0.25)
               : (isDark
                   ? Colors.white.withValues(alpha: 0.07)
                   : const Color(0xFFEEEBE6)),
-          width: profile.isPrimary ? 1.5 : 1,
+          width: isPrimary ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: profile.isPrimary
-                ? OColors.primary.withValues(alpha: 0.07)
-                : Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: isPrimary
+                ? OColors.primary.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: isDark ? 0.10 : 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -286,28 +199,30 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Profile header row ──
+            // ── Nom + genre + badge ─────────────────────────────────
             Row(
               children: [
                 Container(
-                  width: 46,
-                  height: 46,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: profile.isPrimary
-                        ? OColors.primary.withValues(alpha: 0.08)
+                    color: isPrimary
+                        ? OColors.primary.withValues(alpha: 0.10)
                         : (isDark
                             ? Colors.white.withValues(alpha: 0.06)
                             : const Color(0xFFF4F1EC)),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(
-                    profile.gender == 'homme' ? Iconsax.man : Iconsax.woman,
-                    color: profile.isPrimary
+                    profile.gender == 'homme'
+                        ? Iconsax.man
+                        : Iconsax.woman,
+                    size: 20,
+                    color: isPrimary
                         ? OColors.primary
                         : (isDark
-                            ? Colors.white60
-                            : const Color(0xFF4A4542)),
-                    size: 21,
+                            ? Colors.white54
+                            : const Color(0xFF888480)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -318,7 +233,7 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
                       Text(
                         profile.profileName,
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: isDark
                               ? Colors.white
@@ -327,33 +242,36 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        profile.gender.capitalizeFirst!,
-                        style: const TextStyle(
+                        profile.gender.capitalizeFirst ?? profile.gender,
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF888480),
+                          color: isDark
+                              ? Colors.white38
+                              : const Color(0xFFB0AAA2),
                         ),
                       ),
                     ],
                   ),
                 ),
-                if (profile.isPrimary)
+                if (isPrimary)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
+                        horizontal: 9, vertical: 4),
                     decoration: BoxDecoration(
                       color: OColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Iconsax.star5, color: OColors.primary, size: 11),
+                        Icon(Iconsax.star5,
+                            color: OColors.primary, size: 10),
                         const SizedBox(width: 4),
                         Text(
                           'Principal',
                           style: TextStyle(
                             color: OColors.primary,
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -364,53 +282,97 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 14),
-            Container(
-              height: 1,
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : const Color(0xFFF0EDE8),
-            ),
-            const SizedBox(height: 14),
 
-            // ── Measurements chips ──
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildChip('Poitrine', profile.chest, 'cm', isDark),
-                _buildChip('Taille', profile.waist, 'cm', isDark),
-                if (profile.gender == 'femme')
-                  _buildChip('Hanches', profile.hips, 'cm', isDark)
-                else
-                  _buildChip('Épaules', profile.shoulder, 'cm', isDark),
-                if (profile.height != null)
-                  _buildChip('Hauteur', profile.height, 'cm', isDark),
-                if (profile.weight != null)
-                  _buildChip('Poids', profile.weight, 'kg', isDark),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // ── Actions ──
+            // ── Complétion ──────────────────────────────────────────
             Row(
               children: [
                 Expanded(
-                  child: _actionButton(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 4,
+                      backgroundColor: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : const Color(0xFFF0EDE8),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        progress == 1.0
+                            ? const Color(0xFF34C759)
+                            : OColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '$completed/$_totalFields',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: progress == 1.0
+                        ? const Color(0xFF34C759)
+                        : (isDark
+                            ? Colors.white54
+                            : const Color(0xFF888480)),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── 3 mesures clés ──────────────────────────────────────
+            Row(
+              children: [
+                _keyMeasure(
+                  'Poitrine',
+                  profile.chest,
+                  'cm',
+                  isDark,
+                ),
+                const SizedBox(width: 8),
+                _keyMeasure(
+                  'Taille',
+                  profile.waist,
+                  'cm',
+                  isDark,
+                ),
+                const SizedBox(width: 8),
+                _keyMeasure(
+                  profile.gender == 'femme' ? 'Hanches' : 'Épaules',
+                  profile.gender == 'femme'
+                      ? profile.hips
+                      : profile.shoulder,
+                  'cm',
+                  isDark,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            // ── Actions ─────────────────────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: _actionBtn(
                     icon: Iconsax.edit,
                     label: 'Modifier',
                     onTap: () => Get.to(
-                      () => ManualMeasurementEntryScreen(profile: profile),
+                      () => ManualMeasurementEntryScreen(
+                          profile: profile),
                     ),
                     isDark: isDark,
                   ),
                 ),
-                if (!profile.isPrimary && profile.id != null) ...[
+                if (!isPrimary && profile.id != null) ...[
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _actionButton(
+                    child: _actionBtn(
                       icon: Iconsax.star,
-                      label: 'Principal',
-                      onTap: () => controller.setPrimary(profile.id!),
+                      label: 'Définir principal',
+                      onTap: () =>
+                          controller.setPrimary(profile.id!),
                       isDark: isDark,
                     ),
                   ),
@@ -421,18 +383,19 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
                     onTap: () =>
                         _confirmDelete(context, profile, controller),
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         color: Colors.red.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(11),
                         border: Border.all(
-                            color: Colors.red.withValues(alpha: 0.2)),
+                          color: Colors.red.withValues(alpha: 0.18),
+                        ),
                       ),
                       child: Icon(
                         Iconsax.trash,
-                        color: Colors.red.withValues(alpha: 0.7),
-                        size: 16,
+                        color: Colors.red.withValues(alpha: 0.65),
+                        size: 15,
                       ),
                     ),
                   ),
@@ -445,7 +408,53 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
     );
   }
 
-  Widget _actionButton({
+  Widget _keyMeasure(
+      String label, double? value, String unit, bool isDark) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.04)
+              : const Color(0xFFF8F6F3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: isDark
+                    ? Colors.white38
+                    : const Color(0xFFB0AAA2),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              value != null
+                  ? '${value.toStringAsFixed(0)} $unit'
+                  : '—',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: value != null
+                    ? (isDark ? Colors.white : const Color(0xFF1A1A1A))
+                    : (isDark
+                        ? Colors.white24
+                        : const Color(0xFFCCC8C4)),
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _actionBtn({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
@@ -459,7 +468,7 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
           color: isDark
               ? Colors.white.withValues(alpha: 0.04)
               : const Color(0xFFF8F6F3),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(11),
           border: Border.all(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.08)
@@ -469,11 +478,53 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 14, color: OColors.primary),
+            Icon(icon, size: 13, color: OColors.primary),
             const SizedBox(width: 6),
             Text(
               label,
               style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: OColors.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Add card ─────────────────────────────────────────────────────────────────
+
+  Widget _buildAddCard(bool isDark) {
+    return GestureDetector(
+      onTap: () => Get.to(() => const ManualMeasurementEntryScreen()),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: OColors.primary.withValues(alpha: 0.20),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: OColors.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Iconsax.add,
+                  size: 14, color: OColors.primary),
+            ),
+            const SizedBox(width: 9),
+            const Text(
+              'Créer un nouveau profil',
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: OColors.primary,
@@ -485,74 +536,146 @@ class MeasurementProfileDisplayScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChip(String label, double? value, String unit, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFF4F2EF),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: isDark ? Colors.white54 : const Color(0xFFB0AAA2),
-              fontWeight: FontWeight.w500,
+  // ── Empty state ───────────────────────────────────────────────────────────────
+
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: OColors.primary.withValues(alpha: 0.07),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Iconsax.ruler,
+                  size: 44, color: OColors.primary),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value != null ? '${value.toStringAsFixed(0)} $unit' : '—',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+            const SizedBox(height: 22),
+            Text(
+              'Aucun profil de mesure',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Text(
+              'Créez votre premier profil pour que nos tailleurs confectionnent vos vêtements sur mesure.',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark
+                    ? Colors.white54
+                    : const Color(0xFF888480),
+                height: 1.55,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            GestureDetector(
+              onTap: () =>
+                  Get.to(() => const ManualMeasurementEntryScreen()),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white
+                      : const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Iconsax.ruler,
+                      size: 16,
+                      color: isDark
+                          ? const Color(0xFF1A1A1A)
+                          : Colors.white,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Créer mon profil',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: isDark
+                            ? const Color(0xFF1A1A1A)
+                            : Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  // ── Delete dialog ─────────────────────────────────────────────────────────────
 
   void _confirmDelete(
     BuildContext context,
     MeasurementProfileModel profile,
     MeasurementController controller,
   ) {
+    final isDark = OHelperFunctions.isDarkMode(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Supprimer ce profil',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor:
+            isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Supprimer ce profil',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+          ),
+        ),
         content: Text(
-          'Voulez-vous vraiment supprimer le profil "${profile.profileName}" ? Cette action est irréversible.',
+          'Voulez-vous vraiment supprimer "${profile.profileName}" ? Cette action est irréversible.',
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white60 : const Color(0xFF888480),
+            height: 1.5,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Annuler'),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                color: isDark
+                    ? Colors.white54
+                    : const Color(0xFF888480),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () {
               Get.back();
               controller.deleteMeasurement(profile.id!);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: OColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+            child: const Text(
+              'Supprimer',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            child: const Text('Supprimer',
-                style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

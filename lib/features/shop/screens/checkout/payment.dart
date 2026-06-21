@@ -67,13 +67,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   const Icon(Iconsax.lock, size: 28, color: OColors.primary),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Connexion requise',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+            Text(
+              'login_required'.tr,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
-              'Vous devez être connecté pour finaliser votre commande.',
+              'login_to_order'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: Colors.grey[500], height: 1.5, fontSize: 13),
@@ -94,15 +94,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('Se connecter',
+                child: Text('sign_in'.tr,
                     style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               ),
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Plus tard',
+              child: Text('later'.tr,
                   style: TextStyle(color: Colors.grey[400], fontSize: 13)),
             ),
           ],
@@ -163,7 +163,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         ),
         title: Text(
-          'Paiement',
+          'payment_title'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 17,
@@ -180,9 +180,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
               color: OColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Text(
-              'Étape 2/2',
-              style: TextStyle(
+            child: Text(
+              'payment_step'.tr,
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: OColors.primary,
@@ -204,7 +204,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               const SizedBox(height: 28),
 
               // ── Payment method ────────────────────────────────────────────
-              _sectionLabel('Moyen de paiement', isDark),
+              _sectionLabel('payment_method'.tr, isDark),
               _buildCardOption(isDark),
 
               const SizedBox(height: 28),
@@ -283,7 +283,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: Column(
                 children: [
                   Text(
-                    'TOTAL À RÉGLER',
+                    'total_to_settle'.tr,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -293,7 +293,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    OLogisticsCalculator.formatFee(_total),
+                    OLogisticsCalculator.formatFeeLocalized(_total),
                     style: const TextStyle(
                       fontSize: 42,
                       fontWeight: FontWeight.w900,
@@ -311,7 +311,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Livraison et confection incluses',
+                      'delivery_included'.tr,
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.white.withValues(alpha: 0.45),
@@ -341,7 +341,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           color: Colors.white.withValues(alpha: 0.30)),
                       const SizedBox(width: 7),
                       Text(
-                        'Paiement 100 % sécurisé · Stripe',
+                        'secure_payment_badge'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.white.withValues(alpha: 0.30),
@@ -462,7 +462,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Carte bancaire',
+                              'card_payment'.tr,
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 16,
@@ -485,7 +485,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
-                                    'Paiement sécurisé via Stripe',
+                                    'secure_via_stripe'.tr,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 12,
@@ -530,7 +530,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Cartes acceptées',
+                        'accepted_cards'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark
@@ -662,16 +662,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Column(
         children: [
           _stripRow(
-            'Confection',
-            OLogisticsCalculator.formatFee(widget.isCart
+            'crafting_estimate'.tr,
+            OLogisticsCalculator.formatFeeLocalized(widget.isCart
                 ? (widget.totalAmount ?? 0)
                 : CustomizationController.instance.basePrice.value),
             isDark,
           ),
           const SizedBox(height: 10),
           _stripRow(
-            'Livraison (${checkoutController.currentLogisticsRate.zone})',
-            OLogisticsCalculator.formatFee(
+            'delivery_zone_fmt'
+                .trParams({'zone': checkoutController.currentLogisticsRate.zone}),
+            OLogisticsCalculator.formatFeeLocalized(
                 checkoutController.currentLogisticsRate.fee),
             isDark,
           ),
@@ -682,16 +683,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total',
-                style: TextStyle(
+              Text(
+                'total'.tr,
+                style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                   color: Color(0xFF1A1A1A),
                 ),
               ),
               Text(
-                OLogisticsCalculator.formatFee(_total),
+                OLogisticsCalculator.formatFeeLocalized(_total),
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 15,
@@ -736,7 +737,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               size: 13, color: Color(0xFFD0CCC8)),
           const SizedBox(width: 6),
           Text(
-            'Chiffrement SSL 256-bit · Aucune donnée stockée',
+            'ssl_note'.tr,
             style: TextStyle(
               fontSize: 11,
               color: Colors.grey[400],
@@ -776,7 +777,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   size: 12, color: Color(0xFFB0AAA2)),
               const SizedBox(width: 5),
               Text(
-                'Paiement sécurisé · Propulsé par Stripe',
+                'secure_payment'.tr,
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.grey[400],
@@ -844,7 +845,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 size: 16, color: Colors.white),
                             const SizedBox(width: 8),
                             Text(
-                              'Payer ${OLogisticsCalculator.formatFee(_total)}',
+                              'pay_amount_fmt'.trParams({
+                                'amount': OLogisticsCalculator.formatFeeLocalized(_total),
+                              }),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,

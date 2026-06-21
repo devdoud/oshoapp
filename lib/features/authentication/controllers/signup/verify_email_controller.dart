@@ -4,76 +4,93 @@ import 'package:osho/common/widgets/loaders/loader.dart';
 import 'package:osho/common/widgets/success_screen/success_screen.dart';
 import 'package:osho/data/repositories/authentication/authentication_repository.dart';
 import 'package:osho/utils/constants/image_strings.dart';
-import 'package:osho/utils/constants/text_strings.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class VerifyEmailController extends GetxController {
   static VerifyEmailController get to => Get.find<VerifyEmailController>();
 
+  // Email passé depuis l'écran d'inscription (nécessaire car la session
+  // n'existe pas encore avant confirmation — currentUser serait null)
+  String? userEmail;
+
   /// Send email whenever Verify Screen appears & set timer for auto redirect.
   @override
   void onInit() {
-    sendEmailVerification();
-    setTimerForAutoRedirect();
     super.onInit();
+    _sendOnOpen();
+    _startPolling();
   }
 
-  /// Send Email verifiction link
-  sendEmailVerification() async {
+  void _sendOnOpen() async {
     try {
-      await AuthenticationRepository.instance.sendEmailVerification();
+      await AuthenticationRepository.instance.sendEmailVerification(email: userEmail);
       OLoaders.successSnackBar(
-          title: 'Email sent',
-          message: 'Please check your inbox and verify your email.');
-    } catch (e) {
-      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible d\'envoyer l\'email. Veuillez réessayer.');
+        title: 'email_sent_title'.tr,
+        message: 'email_sent_msg'.tr,
+      );
+    } catch (_) {
+      // L'email initial est déjà envoyé par signUp() — on ignore l'échec du renvoi
     }
   }
 
-  /// Timer to automatically redirect on Email verifiction
-  setTimerForAutoRedirect() {
+  void _startPolling() {
     Timer.periodic(const Duration(seconds: 3), (timer) async {
       try {
-        // getUser() force la récupération des dernières données depuis le serveur Supabase
-        final response = await Supabase.instance.client.auth.getUser();
-        final user = response.user;
-
+        // Après que l'utilisateur clique le lien, Supabase crée une session ;
+        // refreshSession() permet de détecter ce changement côté client.
+        await Supabase.instance.client.auth.refreshSession();
+        final user = Supabase.instance.client.auth.currentUser;
         if (user?.emailConfirmedAt != null) {
           timer.cancel();
-          Get.off(() => SuccessScreen(
-              image: OImages.successfullyRegisterAnimation,
-              title: OText.yourAcountCreattedTitle,
-              subTitle: OText.yourAcountCreattedSubTitle,
-              onPressed: () =>
-                  AuthenticationRepository.instance.screenRedirect()));
+          _navigateToSuccess();
         }
-      } catch (e) {
-        // On ignore les erreurs silencieuses pendant le polling
-      }
+      } catch (_) {}
     });
   }
 
-  /// Manually check if Email verified
-  checkEmailverificationStatus() async {
-    try {
-      final response = await Supabase.instance.client.auth.getUser();
-      final currentUser = response.user;
+  void _navigateToSuccess() {
+    Get.off(() => SuccessScreen(
+      image: OImages.successfullyRegisterAnimation,
+      title: 'account_created_title'.tr,
+      subTitle: 'verify_email_sub'.tr,
+      onPressed: () => AuthenticationRepository.instance.screenRedirect(),
+    ));
+  }
 
-      if (currentUser != null && currentUser.emailConfirmedAt != null) {
-        Get.off(() => SuccessScreen(
-            image: 'assets/logos/succes_animation.json',
-            title: OText.yourAcountCreattedTitle,
-            subTitle: OText.yourAcountCreattedSubTitle,
-            onPressed: () =>
-                AuthenticationRepository.instance.screenRedirect()));
-      } else {
-        OLoaders.warningSnackBar(
-            title: 'Non vérifié',
-            message: 'Veuillez confirmer votre e-mail pour continuer.');
-      }
+  /// Bouton "Renvoyer l'email"
+  void sendEmailVerification() async {
+    try {
+      await AuthenticationRepository.instance.sendEmailVerification(email: userEmail);
+      OLoaders.successSnackBar(
+        title: 'email_resent_title'.tr,
+        message: 'email_resent_msg'.tr,
+      );
     } catch (e) {
       OLoaders.errorSnackBar(
-          title: 'Erreur', message: 'Impossible de vérifier le statut.');
+        title: 'error_title'.tr,
+        message: 'email_send_failed'.tr,
+      );
+    }
+  }
+
+  /// Bouton "Continuer" — vérification manuelle
+  void checkEmailverificationStatus() async {
+    try {
+      await Supabase.instance.client.auth.refreshSession();
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user?.emailConfirmedAt != null) {
+        _navigateToSuccess();
+      } else {
+        OLoaders.warningSnackBar(
+          title: 'not_confirmed_title'.tr,
+          message: 'not_confirmed_msg'.tr,
+        );
+      }
+    } catch (e) {
+      OLoaders.warningSnackBar(
+        title: 'not_confirmed_title'.tr,
+        message: 'not_confirmed_msg'.tr,
+      );
     }
   }
 }

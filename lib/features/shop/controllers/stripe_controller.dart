@@ -116,22 +116,23 @@ class StripeController extends GetxController {
   }
 
   Future<Map<String, dynamic>?> createPaymentIntent(
-    int amount,
+    int amount, // conservé pour compatibilité API mais ignoré côté serveur
     String currency,
     Map<String, dynamic> orderPayload,
   ) async {
     try {
-      final session = await _requireValidSession();
+      await _requireValidSession();
       debugPrint(
-        '[STRIPE] Session OK user=${Supabase.instance.client.auth.currentUser?.id} expiresAt=${session.expiresAt}',
+        '[STRIPE] Session OK user=${Supabase.instance.client.auth.currentUser?.id}',
       );
 
+      // Le montant est calculé CÔTÉ SERVEUR — on envoie uniquement le payload
       final response = await Supabase.instance.client.functions.invoke(
         'create-payment-intent',
         body: {
-          'amount': amount,
           'currency': currency,
           'order_payload': orderPayload,
+          // 'amount' supprimé — le serveur est la source de vérité
         },
       );
 
@@ -151,6 +152,14 @@ class StripeController extends GetxController {
       }
 
       return Map<String, dynamic>.from(data as Map);
+    } on FunctionException catch (e) {
+      // supabase_flutter 2.x throws FunctionException for HTTP >= 400
+      debugPrint('[PAYMENT INTENT FUNCTION ERROR] Status: ${e.status}, Details: ${e.details}');
+      final details = e.details;
+      final msg = details is Map
+          ? details['error']?.toString()
+          : details?.toString();
+      throw msg ?? 'Erreur serveur (${e.status}). Veuillez réessayer.';
     } catch (e) {
       debugPrint('[PAYMENT INTENT ERROR] $e');
       rethrow;

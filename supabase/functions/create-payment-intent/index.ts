@@ -4,7 +4,10 @@ import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { computeOrderTotal, validateCheckoutPayload } from "../_shared/orders.ts";
 import { createServiceClient, requireAuthenticatedUser } from "../_shared/supabase.ts";
 
-const zeroDecimalCurrencies = new Set(["bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga", "pyg", "rwf", "ugx", "vnd", "vuv", "xaf", "xof", "xpf"]);
+const zeroDecimalCurrencies = new Set([
+  "bif","clp","djf","gnf","jpy","kmf","krw","mga",
+  "pyg","rwf","ugx","vnd","vuv","xaf","xof","xpf",
+]);
 
 function toStripeAmount(totalAmount: number, currency: string) {
   return zeroDecimalCurrencies.has(currency.toLowerCase())
@@ -19,40 +22,29 @@ Deno.serve(async (req: Request) => {
 
   try {
     const user = await requireAuthenticatedUser(req);
-    const { amount, currency, order_payload } = await req.json();
-
-    if (typeof amount !== "number" || amount <= 0) {
-      return jsonResponse({ error: "amount must be a positive number." }, { status: 400 });
-    }
+    const { currency, order_payload } = await req.json();
 
     if (typeof currency !== "string" || currency.trim().length !== 3) {
       return jsonResponse({ error: "currency must be a 3-letter code." }, { status: 400 });
     }
 
     const normalizedCurrency = currency.toLowerCase();
+
+    // ── Le serveur calcule le montant — jamais le client ────────────────────
     const payload = validateCheckoutPayload(order_payload);
     const orderTotal = computeOrderTotal(payload);
-    const expectedAmount = toStripeAmount(orderTotal, normalizedCurrency);
+    const stripeAmount = toStripeAmount(orderTotal, normalizedCurrency);
 
-    if (expectedAmount != Math.round(amount)) {
-      return jsonResponse(
-        {
-          error: "Payment amount does not match order payload total.",
-          expected_amount: expectedAmount,
-          received_amount: amount,
-        },
-        { status: 400 },
-      );
+    if (stripeAmount <= 0) {
+      return jsonResponse({ error: "Computed order total is invalid." }, { status: 400 });
     }
 
     const secretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!secretKey) {
-      throw new Error("STRIPE_SECRET_KEY is not configured.");
-    }
+    if (!secretKey) throw new Error("STRIPE_SECRET_KEY is not configured.");
 
     const attemptId = crypto.randomUUID();
     const body = new URLSearchParams();
-    body.set("amount", String(expectedAmount));
+    body.set("amount", String(stripeAmount));
     body.set("currency", normalizedCurrency);
     body.set("automatic_payment_methods[enabled]", "true");
     body.set("metadata[attempt_id]", attemptId);
@@ -97,11 +89,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Retourner le total calculé côté serveur → le client l'affiche et l'utilise
     return jsonResponse({
       id: stripeData.id,
       client_secret: stripeData.client_secret,
       payment_attempt_id: attemptId,
       status: stripeData.status,
+      computed_total: orderTotal,        // ← total FCFA calculé côté serveur
+      computed_total_stripe: stripeAmount,
     });
   } catch (error) {
     return jsonResponse(

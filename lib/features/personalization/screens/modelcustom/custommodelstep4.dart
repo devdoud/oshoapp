@@ -17,11 +17,11 @@ class CustomModelStep4 extends StatelessWidget {
     final controller = Get.put(CustomizationController());
 
     return CustomizationLayout(
-      title: 'Récapitulatif',
-      subTitle: 'Étape 4 : Validation finale',
+      title: 'recap_title'.tr,
+      subTitle: 'recap_subtitle'.tr,
       step: 4,
       totalSteps: 4,
-      nextButtonText: 'Passer à la commande',
+      nextButtonText: 'proceed_to_order'.tr,
       onNext: () {
         Get.to(() => const CheckoutScreen());
       },
@@ -34,7 +34,7 @@ class CustomModelStep4 extends StatelessWidget {
           final bottom = controller.standardBottomSize.value;
           final sizeLabel = (top.isNotEmpty && bottom.isNotEmpty)
               ? '$top / $bottom'
-              : 'Sur Mesure';
+              : 'sur_mesure'.tr;
 
           return Column(
             children: [
@@ -93,27 +93,27 @@ class CustomModelStep4 extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _attrRow('Matière', controller.fabricName, Iconsax.shapes),
+                    _attrRow('material'.tr, controller.fabricName, Iconsax.shapes),
                     _line(),
                     _attrRow(
-                      'Broderie',
+                      'embroidery'.tr,
                       controller.hasBroderie.value &&
                               controller.step2Options.isNotEmpty
                           ? controller.getStep2Name()
-                          : 'Aucun',
+                          : 'none'.tr,
                       Iconsax.magicpen,
                     ),
                     _line(),
                     _attrRow(
-                      'Accessoire',
+                      'accessory'.tr,
                       controller.hasFinition.value &&
                               controller.step3Options.isNotEmpty
                           ? controller.getStep3Name()
-                          : 'Aucun',
+                          : 'none'.tr,
                       Iconsax.add_circle,
                     ),
                     _line(),
-                    _attrRow('Taille', sizeLabel, Iconsax.frame_1),
+                    _attrRow('size'.tr, sizeLabel, Iconsax.frame_1),
                   ],
                 ),
               ),
@@ -143,20 +143,20 @@ class CustomModelStep4 extends StatelessWidget {
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          'PRIX TOTAL',
-                          style: TextStyle(
+                          'total_price_label'.tr,
+                          style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.2,
                             color: Color(0xFFB0AAA2),
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'Livraison non incluse',
-                          style: TextStyle(
+                          'delivery_not_included'.tr,
+                          style: const TextStyle(
                             fontSize: 11,
                             color: Color(0xFFB0AAA2),
                           ),
@@ -164,7 +164,7 @@ class CustomModelStep4 extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      OLogisticsCalculator.formatFee(
+                      OLogisticsCalculator.formatFeeLocalized(
                           controller.basePrice.value),
                       style: const TextStyle(
                         fontSize: 22,
@@ -193,7 +193,10 @@ class CustomModelStep4 extends StatelessWidget {
                           size: 13, color: Colors.green[700]),
                       const SizedBox(width: 6),
                       Text(
-                        'Confection : $days–${days + 3} jours ouvrables',
+                        'crafting_range'.trParams({
+                          'min': '$days',
+                          'max': '${days + 3}',
+                        }),
                         style: const TextStyle(
                           color: Color(0xFF388E3C),
                           fontSize: 12,
@@ -210,15 +213,15 @@ class CustomModelStep4 extends StatelessWidget {
               TextButton(
                 onPressed: () {
                   Get.snackbar(
-                    'Succès',
-                    'Création enregistrée dans vos designs',
+                    'design_saved_title'.tr,
+                    'design_saved_msg'.tr,
                     snackPosition: SnackPosition.BOTTOM,
                     backgroundColor: Colors.white,
                     colorText: Colors.black,
                   );
                 },
                 child: Text(
-                  'Enregistrer pour plus tard',
+                  'save_for_later'.tr,
                   style: TextStyle(
                     color: Colors.grey[500],
                     fontWeight: FontWeight.w500,
@@ -239,11 +242,11 @@ class CustomModelStep4 extends StatelessWidget {
     final String category;
     final type = categoryType.toLowerCase();
     if (type == 'homme') {
-      category = 'Tenue Homme';
+      category = 'outfit_men'.tr;
     } else if (type == 'couple') {
-      category = 'Tenue Couple';
+      category = 'outfit_couple'.tr;
     } else {
-      category = 'Tenue Femme';
+      category = 'outfit_women'.tr;
     }
     return fabric.isNotEmpty ? '$fabric · $category' : category;
   }

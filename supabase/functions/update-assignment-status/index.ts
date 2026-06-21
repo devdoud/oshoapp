@@ -86,6 +86,32 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Refus ou annulation : le trigger remet l'ordre à 'pending', puis on
+    // supprime la ligne pour qu'elle disparaisse automatiquement de l'app tailleur.
+    if (status === "rejected" || status === "cancelled") {
+      // L'UPDATE déclenche le trigger (reset order → pending)
+      const { error: rejectError } = await supabase
+        .from("order_assignments")
+        .update({ status, notes: typeof notes === "string" ? notes : null })
+        .eq("id", assignment.id);
+
+      if (rejectError) {
+        throw new Error(`Unable to reject assignment: ${rejectError.message}`);
+      }
+
+      // Supprimer la ligne : l'assignation disparaît de la page du tailleur
+      const { error: deleteError } = await supabase
+        .from("order_assignments")
+        .delete()
+        .eq("id", assignment.id);
+
+      if (deleteError) {
+        throw new Error(`Unable to remove assignment: ${deleteError.message}`);
+      }
+
+      return jsonResponse({ success: true, removed: true });
+    }
+
     const updates: Record<string, unknown> = {
       status,
       notes: typeof notes === "string" ? notes : null,

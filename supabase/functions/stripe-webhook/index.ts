@@ -1,10 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { jsonResponse } from "../_shared/cors.ts";
-import {
-  createOrderFromPaymentAttempt,
-  upsertPaymentAttemptStatus,
-} from "../_shared/orders.ts";
+import { upsertPaymentAttemptStatus } from "../_shared/orders.ts";
 import { createServiceClient } from "../_shared/supabase.ts";
 
 function secureCompare(a: string, b: string) {
@@ -95,13 +92,17 @@ Deno.serve(async (req: Request) => {
         ? new Date(object.created * 1000).toISOString()
         : new Date().toISOString();
 
+      // Only update the payment attempt status.
+      // Order creation is exclusively handled by confirm-paid-order (called by
+      // the Flutter app), which avoids a race condition where both this webhook
+      // and confirm-paid-order call createOrderFromPaymentAttempt concurrently
+      // and insert duplicate order_items.
       await upsertPaymentAttemptStatus(supabase, paymentIntentId, "succeeded", {
         paid_at: paidAt,
         error_message: null,
       });
 
-      const result = await createOrderFromPaymentAttempt(supabase, paymentIntentId);
-      return jsonResponse({ received: true, created: result.created, order_id: result.order.id });
+      return jsonResponse({ received: true, status: "succeeded" });
     }
 
     if (event.type === "payment_intent.payment_failed") {

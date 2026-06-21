@@ -97,11 +97,13 @@ class AuthenticationRepository extends GetxController {
   }
 
   /// [EmailVerification]  - EMAIL VERIFICATION
-  Future<void> sendEmailVerification() async {
+  /// [email] : adresse explicite — nécessaire car currentUser est null avant
+  /// la confirmation (pas de session active à ce stade).
+  Future<void> sendEmailVerification({String? email}) async {
     try {
-      final email = _supabase.auth.currentUser?.email;
-      if (email != null) {
-        await _supabase.auth.resend(type: OtpType.signup, email: email);
+      final target = email ?? _supabase.auth.currentUser?.email;
+      if (target != null) {
+        await _supabase.auth.resend(type: OtpType.signup, email: target);
       }
     } catch (e) {
       throw 'Something went wrong. Please try again later.';

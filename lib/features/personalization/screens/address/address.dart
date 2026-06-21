@@ -64,6 +64,7 @@ class UserAddressScreen extends StatelessWidget {
                           address: address,
                           isSelected: isSelected,
                           isDark: isDark,
+                          showActions: !selectMode,
                           onTap: () async {
                             if (selectMode) {
                               await addressController.selectAddress(address);
@@ -122,7 +123,7 @@ class UserAddressScreen extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                'Mes adresses',
+                'my_addresses'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -163,7 +164,7 @@ class UserAddressScreen extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Sélectionnez l\'adresse à utiliser pour cette commande.',
+              'select_address_hint'.tr,
               style: TextStyle(
                 fontSize: 12,
                 color: isDark ? Colors.white70 : const Color(0xFF4A4542),
@@ -209,7 +210,7 @@ class UserAddressScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Aucune adresse',
+            'no_address'.tr,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -218,7 +219,7 @@ class UserAddressScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Ajoutez une adresse pour faciliter\nvos prochaines commandes.',
+            'no_address_sub'.tr,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
@@ -268,7 +269,7 @@ class UserAddressScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 7),
                 Text(
-                  'Nouvelle adresse',
+                  'new_address'.tr,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,

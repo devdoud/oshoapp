@@ -5,7 +5,6 @@ import 'package:osho/features/authentication/controllers/forget_password/forget_
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/image_strings.dart';
 import 'package:osho/utils/constants/sizes.dart';
-import 'package:osho/utils/constants/text_strings.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
 import '../login/login.dart';
 
@@ -75,7 +74,7 @@ class ResetPassword extends StatelessWidget {
                 ),
                 const SizedBox(height: OSizes.spaceBtwSections),
                 Text(
-                  OText.changeYourPasswordTitle,
+                  'password_change_email_title'.tr,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: dark ? Colors.white : OColors.textprimary,
                         fontSize: OSizes.lg,
@@ -87,7 +86,7 @@ class ResetPassword extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
-                    OText.changeYourPasswordSubTitle,
+                    'password_change_email_sub'.tr,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: dark ? Colors.white70 : OColors.grey2,
                           height: 1.5,
@@ -112,7 +111,7 @@ class ResetPassword extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      OText.done,
+                      'ok_btn'.tr,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: OColors.white,
                             fontSize: 16,
@@ -130,7 +129,7 @@ class ResetPassword extends StatelessWidget {
                           .resendPasswordResetEmail(email);
                     },
                     child: Text(
-                      OText.resendEmail,
+                      'resend_email'.tr,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: dark ? Colors.white70 : OColors.primary,
                             fontWeight: FontWeight.w600,

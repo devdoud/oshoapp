@@ -6,7 +6,6 @@ import 'package:osho/utils/helpers/helper_functions.dart';
 import 'package:osho/utils/validators/validation.dart';
 import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/sizes.dart';
-import '../../../../utils/constants/text_strings.dart';
 
 class ForgetPassword extends StatelessWidget {
   const ForgetPassword({super.key});
@@ -37,7 +36,7 @@ class ForgetPassword extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'Recuperation',
+                  'recovery_label'.tr,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: dark ? Colors.white70 : OColors.primary,
                         fontWeight: FontWeight.w700,
@@ -46,7 +45,7 @@ class ForgetPassword extends StatelessWidget {
               ),
               const SizedBox(height: OSizes.spaceBtwInputFields),
               Text(
-                OText.forgetPasswordTitle,
+                'forgot_password_title'.tr,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontSize: 34,
                       fontWeight: FontWeight.w700,
@@ -54,7 +53,7 @@ class ForgetPassword extends StatelessWidget {
               ),
               const SizedBox(height: OSizes.spaceBtwItems),
               Text(
-                OText.forgetPassordSubTitle,
+                'forgot_password_sub'.tr,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: dark ? Colors.white70 : OColors.grey2,
                       height: 1.5,
@@ -86,10 +85,10 @@ class ForgetPassword extends StatelessWidget {
                       child: TextFormField(
                         controller: controller.email,
                         validator: OValidator.validateEmail,
-                        decoration: const InputDecoration(
-                          labelText: OText.email,
+                        decoration: InputDecoration(
+                          labelText: 'email_label'.tr,
                           hintText: 'exemple@email.com',
-                          prefixIcon: Icon(Iconsax.direct_right, size: 16),
+                          prefixIcon: const Icon(Iconsax.direct_right, size: 16),
                         ),
                       ),
                     ),
@@ -110,7 +109,7 @@ class ForgetPassword extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          OText.submit,
+                          'submit_btn'.tr,
                           style:
                               Theme.of(context).textTheme.bodyLarge?.copyWith(
                                     color: OColors.white,

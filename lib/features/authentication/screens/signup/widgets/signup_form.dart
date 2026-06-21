@@ -7,7 +7,6 @@ import 'package:osho/features/authentication/controllers/signup/signup_controlle
 import 'package:osho/features/authentication/screens/signup/widgets/terms_conditions_checkbox.dart';
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/sizes.dart';
-import 'package:osho/utils/constants/text_strings.dart';
 import 'package:osho/utils/validators/validation.dart';
 
 class OSignupForm extends StatelessWidget {
@@ -29,7 +28,7 @@ class OSignupForm extends StatelessWidget {
       children: [
         /// Signup text
         Text(
-          OText.signupSubTitle,
+          'signup_subtitle'.tr,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: helperColor,
                 fontSize: 16,
@@ -48,8 +47,8 @@ class OSignupForm extends StatelessWidget {
                   validator: (value) => OValidator.validateEmptyText('First name', value),
               expands: false,
               decoration: InputDecoration(
-                labelText: OText.firstName,
-                hintText: 'Prenom',
+                labelText: 'first_name'.tr,
+                hintText: 'first_name_hint'.tr,
                 prefixIcon: const Icon(Iconsax.user, size: 16),
               ),
             )),
@@ -60,8 +59,8 @@ class OSignupForm extends StatelessWidget {
                   validator: (value) => OValidator.validateEmptyText('Last Name', value),
                   expands: false,
                   decoration: InputDecoration(
-                    labelText: OText.lastName,
-                    hintText: 'Nom',
+                    labelText: 'last_name'.tr,
+                    hintText: 'last_name'.tr,
                     prefixIcon: const Icon(Iconsax.user, size: 16),
                   ),
                 )),
@@ -78,7 +77,7 @@ class OSignupForm extends StatelessWidget {
           validator: (value) => OValidator.validateEmail(value),
           expands: false,
           decoration: InputDecoration(
-            labelText: OText.email,
+            labelText: 'email_label'.tr,
             hintText: 'exemple@email.com',
             prefixIcon: const Icon(Iconsax.direct, size: 16),
           ),
@@ -92,7 +91,7 @@ class OSignupForm extends StatelessWidget {
           validator: (value) => OValidator.validatePhoneNumber(value),
           expands: false,
           decoration: InputDecoration(
-            labelText: OText.phone,
+            labelText: 'phone_label'.tr,
             hintText: '+234...',
             prefixIcon: const Icon(Iconsax.call, size: 16),
           ),
@@ -109,8 +108,8 @@ class OSignupForm extends StatelessWidget {
             obscureText: controller.hidePassword.value,
             decoration: InputDecoration(
                 prefixIcon: const Icon(Iconsax.lock, size: 16),
-                labelText: OText.password,
-                hintText: 'Minimum 6 caracteres',
+                labelText: 'password_label'.tr,
+                hintText: 'min_password_chars'.tr,
                 suffixIcon: IconButton(
                   onPressed: () {
                     controller.hidePassword.value = !controller.hidePassword.value;
@@ -143,7 +142,7 @@ class OSignupForm extends StatelessWidget {
               textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: OColors.white),
           ),
           child: Text(
-              OText.signup,
+              'signup_btn'.tr,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: OColors.white,
                 fontSize: 16,
@@ -157,7 +156,7 @@ class OSignupForm extends StatelessWidget {
           height: OSizes.spaceBtwSections,
         ),
         /// Divider
-        OFormDivider(dividertext: OText.orsignup),
+        OFormDivider(dividertext: 'or_signup_with'.tr),
     
         const SizedBox(
           height: OSizes.spaceBtwInputFields,

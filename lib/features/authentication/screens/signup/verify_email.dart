@@ -6,7 +6,6 @@ import 'package:osho/features/authentication/controllers/signup/verify_email_con
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/image_strings.dart';
 import 'package:osho/utils/constants/sizes.dart';
-import 'package:osho/utils/constants/text_strings.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
 
 class VerifyEmailScreen extends StatelessWidget {
@@ -16,7 +15,8 @@ class VerifyEmailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(VerifyEmailController());
+    final controller = Get.put(VerifyEmailController())
+      ..userEmail = email;
     final dark = OHelperFunctions.isDarkMode(context);
     final backgroundColor =
         dark ? const Color(0xFF090B0F) : const Color(0xFFFAF6F0);
@@ -43,12 +43,12 @@ class VerifyEmailScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: dark
-                    ? Colors.white.withOpacity(0.06)
-                    : Colors.black.withOpacity(0.05),
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.black.withValues(alpha: 0.05),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(dark ? 0.18 : 0.06),
+                  color: Colors.black.withValues(alpha: dark ? 0.18 : 0.06),
                   blurRadius: 24,
                   offset: const Offset(0, 12),
                 ),
@@ -62,8 +62,8 @@ class VerifyEmailScreen extends StatelessWidget {
                   height: 74,
                   decoration: BoxDecoration(
                     color: dark
-                        ? Colors.white.withOpacity(0.06)
-                        : OColors.primary.withOpacity(0.06),
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : OColors.primary.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(22),
                   ),
                   child: Center(
@@ -76,7 +76,7 @@ class VerifyEmailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: OSizes.spaceBtwSections),
                 Text(
-                  OText.verifyEmail,
+                  'verify_email_title'.tr,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: dark ? Colors.white : OColors.textprimary,
                         fontSize: OSizes.lg,
@@ -97,7 +97,7 @@ class VerifyEmailScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
-                    OText.confirmEmailSubtitle,
+                    'verify_email_sub'.tr,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: dark ? Colors.white70 : OColors.grey2,
                           height: 1.5,
@@ -122,7 +122,7 @@ class VerifyEmailScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      OText.continu,
+                      'continue'.tr,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: OColors.white,
                             fontSize: 16,
@@ -137,7 +137,7 @@ class VerifyEmailScreen extends StatelessWidget {
                   child: TextButton(
                     onPressed: () => controller.sendEmailVerification(),
                     child: Text(
-                      OText.resendEmail,
+                      'resend_email'.tr,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: dark ? Colors.white70 : OColors.primary,
                             fontWeight: FontWeight.w600,

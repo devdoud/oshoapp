@@ -223,12 +223,30 @@ class CustomizationController extends GetxController {
       final step2Type = (gender == 'homme') ? 'embroidery' : 'cut';
 
       // ── Step 1 : tissu ────────────────────────────────────────────
-      // Priorité : options produit > catalogue global
+      // Priorité 1 : options spécifiques définies sur le produit
+      // Priorité 2 : catalogue global filtré par fabricType du produit
+      // Priorité 3 : tout le catalogue (aucun type défini)
       List<Map<String, dynamic>> fabrics;
       if (productFabricOptions.isNotEmpty) {
         fabrics = productFabricOptions.toList();
       } else {
-        fabrics = await _catalogRepository.getOptions('fabric', gender);
+        final all = await _catalogRepository.getOptions('fabric', gender);
+        if (fabricType.value.isNotEmpty) {
+          final typeNorm = fabricType.value.toLowerCase().trim();
+          final filtered = all.where((opt) {
+            final cat = (opt['fabric_category'] ?? opt['category'] ?? '')
+                .toString()
+                .toLowerCase()
+                .trim();
+            // Égalité exacte (insensible à la casse) : "bazin riche" ≠ "bazin"
+            return cat == typeNorm;
+          }).toList();
+          // Si aucune option trouvée pour ce type, on garde la liste vide.
+          // La carte "Autre" (upload photo) reste toujours visible dans l'UI.
+          fabrics = filtered;
+        } else {
+          fabrics = all;
+        }
       }
 
       // ── Step 2 : broderie/coupe (seulement si le produit en dispose) ──
@@ -339,6 +357,13 @@ class CustomizationController extends GetxController {
     }
   }
 
+  String get fabricImageUrl {
+    if (selectedFabricOption.value != null) {
+      return getOptionImage(selectedFabricOption.value!);
+    }
+    return '';
+  }
+
   String getStep2Name() {
     if (selectedStep2Option.value == 999) return "Style personnalisé";
     if (selectedStep2Option.value >= 0 &&
@@ -348,6 +373,14 @@ class CustomizationController extends GetxController {
     return "Standard";
   }
 
+  String getStep2ImageUrl() {
+    if (selectedStep2Option.value >= 0 &&
+        selectedStep2Option.value < step2Options.length) {
+      return getOptionImage(step2Options[selectedStep2Option.value]);
+    }
+    return '';
+  }
+
   String getStep3Name() {
     if (selectedStep3Option.value == 999) return "Détail personnalisé";
     if (selectedStep3Option.value >= 0 &&
@@ -355,6 +388,14 @@ class CustomizationController extends GetxController {
       return getName(step3Options[selectedStep3Option.value]);
     }
     return "Aucun";
+  }
+
+  String getStep3ImageUrl() {
+    if (selectedStep3Option.value >= 0 &&
+        selectedStep3Option.value < step3Options.length) {
+      return getOptionImage(step3Options[selectedStep3Option.value]);
+    }
+    return '';
   }
 
   // Data copied from the UI screens to avoid mismatch (or we could move all data here)

@@ -18,7 +18,7 @@ class OrderScreen extends StatelessWidget {
       backgroundColor:
           isDark ? const Color(0xFF111111) : const Color(0xFFF8F9FA),
       appBar: OAppBar(
-        title: Text("Mes Commandes",
+        title: Text('my_orders'.tr,
             style: Theme.of(context)
                 .textTheme
                 .headlineSmall

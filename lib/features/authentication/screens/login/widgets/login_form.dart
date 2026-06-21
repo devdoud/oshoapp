@@ -7,7 +7,6 @@ import 'package:osho/features/authentication/screens/signup/signup.dart';
 // import 'package:osho/features/authentication/screens/signup/verify_email.dart';
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/sizes.dart';
-import 'package:osho/utils/constants/text_strings.dart';
 import 'package:osho/utils/validators/validation.dart';
 
 import '../../../../../navigation_menu.dart';
@@ -35,7 +34,7 @@ class OLoginForm extends StatelessWidget {
           children: [
             /// connexion text
             Text(
-              OText.loginSubTitle,
+              'login_subtitle'.tr,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: helperColor,
                 fontSize: 16,
@@ -49,7 +48,7 @@ class OLoginForm extends StatelessWidget {
               controller: controller.email,
               validator: (value) => OValidator.validateEmail(value),
               decoration: InputDecoration(
-                labelText: OText.email,
+                labelText: 'email_label'.tr,
                 hintText: 'exemple@email.com',
                 prefixIcon: const Icon(Iconsax.user, size: 18),
               ),
@@ -64,8 +63,8 @@ class OLoginForm extends StatelessWidget {
                 obscureText: controller.hidePassword.value,
                 decoration: InputDecoration(
                     prefixIcon: const Icon(Iconsax.lock, size: 16),
-                    labelText: OText.password,
-                    hintText: 'Votre mot de passe',
+                    labelText: 'password_label'.tr,
+                    hintText: 'your_password_hint'.tr,
                     suffixIcon: IconButton(
                       onPressed: () {
                         controller.hidePassword.value = !controller.hidePassword.value;
@@ -86,7 +85,7 @@ class OLoginForm extends StatelessWidget {
                   children: [
                     Obx(() => Checkbox(value: controller.rememberMe.value, onChanged: (value) => controller.rememberMe.value = !controller.rememberMe.value),),
                     Text(
-                      OText.rememberMe,
+                      'remember_me'.tr,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: helperColor,
                       fontSize: 12,
@@ -101,7 +100,7 @@ class OLoginForm extends StatelessWidget {
                 /// Forget Password
                 TextButton(onPressed: () => Get.to( () => const ForgetPassword() ),
                 child:  Text(
-                  OText.forgotPassword,
+                  'forgot_password'.tr,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: dark ? Colors.white : OColors.primary,
                     fontSize: 11,
@@ -115,20 +114,16 @@ class OLoginForm extends StatelessWidget {
               alignment: WrapAlignment.start,
               children: [
                 Text(
-                  OText.noCompte,
+                  'no_account'.tr,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: helperColor,
                     fontSize: 12,
                     fontWeight:FontWeight.w400,
                   ),
                 ),
-                // TextButton(
-                //   onPressed: () => Get.to(() => VerifyEmailScreen()), child: Text(
-                //   OText.createAccount,
-                // )
                 TextButton(
                   onPressed: () => Get.to(() => SignupScreen()), child: Text(
-                  OText.createAccount,
+                  'create_account'.tr,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: dark ? Colors.white : OColors.primary,
                     fontSize: 12,
@@ -154,7 +149,7 @@ class OLoginForm extends StatelessWidget {
                 textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: OColors.white),
               ),
               child: Text(
-                  OText.signIn,
+                  'login_btn'.tr,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: OColors.white,
                     fontSize: 16,
@@ -170,7 +165,7 @@ class OLoginForm extends StatelessWidget {
               child: TextButton(
                 onPressed: () => Get.offAll(() => const NavigationMenu()),
                 child: Text(
-                  OText.continueAsGuest,
+                  'continue_as_guest'.tr,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: dark ? Colors.white70 : OColors.primary,
                     fontWeight: FontWeight.w600,
@@ -178,12 +173,6 @@ class OLoginForm extends StatelessWidget {
                 ),
               ),
             ),
-
-            // const SizedBox(height: OSizes.spaceBtwItems),
-
-            // /// Create Account Button
-            // SizedBox(width: double.infinity, child: OutlinedButton(onPressed: (){}, child: Text(OText.createAccount),))
-
           ],
         ),
       ),

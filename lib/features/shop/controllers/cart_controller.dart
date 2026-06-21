@@ -112,6 +112,7 @@ class CartController extends GetxController {
     final map = <String, dynamic>{
       'type': 'cart',
       'genre': product.categoryType ?? '',
+      'is_couple': product.isCouple,
     };
     if (product.fabric != null && product.fabric!.isNotEmpty) {
       map['tissu'] = product.fabric;

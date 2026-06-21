@@ -1,5 +1,29 @@
 import 'dart:convert';
 
+/// Élément bilingue de la section "Perfect For". Accepte aussi l'ancien
+/// format (simple chaîne FR) pour rester compatible avec les données déjà
+/// enregistrées avant l'ajout du support EN.
+class PerfectForItem {
+  final String fr;
+  final String? en;
+
+  const PerfectForItem({required this.fr, this.en});
+
+  String forLocale(String langCode) => langCode == 'en' ? (en ?? fr) : fr;
+
+  factory PerfectForItem.fromAny(dynamic raw) {
+    if (raw is Map) {
+      return PerfectForItem(
+        fr: (raw['fr'] ?? raw['FR'] ?? '').toString(),
+        en: raw['en']?.toString(),
+      );
+    }
+    return PerfectForItem(fr: raw?.toString() ?? '');
+  }
+
+  Map<String, dynamic> toJson() => {'fr': fr, if (en != null) 'en': en};
+}
+
 class ProductModel {
   String id;
   String title;
@@ -38,10 +62,7 @@ class ProductModel {
   List<Map<String, dynamic>> finishOptions;
 
   // --- "Perfect For" / "Parfait pour" ---
-  List<String>? perfectFor;
-
-  // --- Prix en dollars (saisi manuellement, indépendant du prix FCFA) ---
-  double? priceUsd;
+  List<PerfectForItem>? perfectFor;
 
   DateTime? createdAt;
 
@@ -74,13 +95,28 @@ class ProductModel {
     this.embroideryOptions = const [],
     this.finishOptions = const [],
     this.perfectFor,
-    this.priceUsd,
     this.createdAt,
   });
 
   /// Create Empty func for clean code
   static ProductModel empty() =>
       ProductModel(id: '', title: '', price: 0, thumbnail: '', sku: '');
+
+  /// Détecte si le produit est un article "couple" (nécessite deux profils
+  /// de mesure) en inspectant toutes les sources de catégorisation
+  /// disponibles, car le backend ne garantit pas un champ unique fiable.
+  bool get isCouple {
+    final fields = <String?>[
+      categoryType,
+      categoryName,
+      categorySlug,
+      categoryStyle,
+      title,
+      ...tags,
+      ...(perfectFor ?? const []).expand((p) => [p.fr, p.en]),
+    ];
+    return fields.any((v) => v?.toLowerCase().contains('couple') ?? false);
+  }
 
   /// Json Format
   toJson() {
@@ -111,8 +147,7 @@ class ProductModel {
       'fabric_options': fabricOptions,
       'embroidery_options': embroideryOptions,
       'finish_options': finishOptions,
-      'perfect_for': perfectFor,
-      'price_usd': priceUsd,
+      'perfect_for': perfectFor?.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -191,9 +226,12 @@ class ProductModel {
                   : catObj['name'] ?? '')
               : json['category_name'] ?? '';
 
-          if (nameFallback.toLowerCase().contains('homme')) {
+          final lowerName = nameFallback.toLowerCase();
+          if (lowerName.contains('couple')) {
+            return 'couple';
+          } else if (lowerName.contains('homme')) {
             return 'homme';
-          } else if (nameFallback.toLowerCase().contains('femme')) {
+          } else if (lowerName.contains('femme')) {
             return 'femme';
           }
         }
@@ -251,15 +289,15 @@ class ProductModel {
       embroidery: json['embroidery'] as String?,
       accessory: json['accessory'] as String?,
       tags: json['tags'] != null
-          ? List<String>.from((json['tags'] as List).map((e) => e.toString()))
+          ? (json['tags'] as List)
+              .map(_normalizeTagEntry)
+              .where((s) => s.isNotEmpty)
+              .toList()
           : [],
       fabricOptions: _parseOptionList(json['fabric_options']),
       embroideryOptions: _parseOptionList(json['embroidery_options']),
       finishOptions: _parseOptionList(json['finish_options']),
-      perfectFor: _parseStringList(json['perfect_for']),
-      priceUsd: json['price_usd'] != null
-          ? double.tryParse(json['price_usd'].toString())
-          : null,
+      perfectFor: _parsePerfectForList(json['perfect_for']),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
@@ -267,16 +305,32 @@ class ProductModel {
   }
 }
 
-List<String> _parseStringList(dynamic raw) {
+/// Certaines lignes existantes ont par erreur des objets bilingues
+/// `{"fr": "...", "en": "..."}` dans la colonne `tags` (format prévu pour
+/// `perfect_for`). On récupère le texte FR/EN au lieu d'afficher le Map brut.
+String _normalizeTagEntry(dynamic e) {
+  if (e is Map) {
+    return (e['fr'] ?? e['en'] ?? '').toString();
+  }
+  return e.toString();
+}
+
+List<PerfectForItem> _parsePerfectForList(dynamic raw) {
   if (raw == null) return [];
-  if (raw is List) return raw.map((e) => e.toString()).toList();
-  if (raw is String && raw.trim().isNotEmpty) {
+  List list;
+  if (raw is List) {
+    list = raw;
+  } else if (raw is String && raw.trim().isNotEmpty) {
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is List) return decoded.map((e) => e.toString()).toList();
-    } catch (_) {}
+      list = decoded is List ? decoded : [];
+    } catch (_) {
+      list = [];
+    }
+  } else {
+    list = [];
   }
-  return [];
+  return list.map((e) => PerfectForItem.fromAny(e)).toList();
 }
 
 List<Map<String, dynamic>> _parseOptionList(dynamic raw) {

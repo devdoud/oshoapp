@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:osho/data/repositories/authentication/authentication_repository.dart';
 import 'package:osho/utils/constants/api_constants.dart';
+import 'package:osho/utils/helpers/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'app.dart';
@@ -43,5 +44,8 @@ Future<void> main() async {
     (FirebaseApp value) => Get.put(AuthenticationRepository()),
   );
 
-  runApp(const App());
+  // Initialiser le service de notifications (permissions, canal Android, handlers)
+  await NotificationService.instance.init();
+
+  runApp(const App());    
 }

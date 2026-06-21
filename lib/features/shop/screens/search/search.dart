@@ -22,13 +22,49 @@ class _SearchScreenState extends State<SearchScreen> {
   final FocusNode _focusNode = FocusNode();
   final productController = Get.put(ProductController());
 
+  // ── Contenu mode africaine ────────────────────────────────────────────────
+
+  static const _discoverItems = [
+    _DiscoverItem('Boubou', Iconsax.star),
+    _DiscoverItem('Bazin Riche', Iconsax.diamonds),
+    _DiscoverItem('Wax', Iconsax.color_swatch),
+    _DiscoverItem('Mariage', Iconsax.heart),
+    _DiscoverItem('Couple', Iconsax.profile_2user),
+    _DiscoverItem('Kente', Iconsax.tag_2),
+  ];
+
+  static const _trendingFR = [
+    'Grand Boubou',
+    'Bazin brodé',
+    'Tenue de mariage',
+    'Kaftan femme',
+    'Dashiki homme',
+    'Ensemble couple',
+    'Agbada',
+    'Wax print',
+  ];
+
+  static const _trendingEN = [
+    'Grand Boubou',
+    'Embroidered Bazin',
+    'Wedding outfit',
+    'Kaftan women',
+    'Dashiki men',
+    'Couple outfit',
+    'Agbada',
+    'Wax print',
+  ];
+
+  bool get _isEn => Get.locale?.languageCode == 'en';
+  List<String> get _trending => _isEn ? _trendingEN : _trendingFR;
+
   @override
   void initState() {
     super.initState();
     if (productController.featuredProducts.isEmpty) {
       productController.fetchAllProducts();
     }
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 280), () {
       if (mounted) FocusScope.of(context).requestFocus(_focusNode);
     });
   }
@@ -40,6 +76,14 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
+  void _search(String term) {
+    _searchController.text = term;
+    _searchController.selection =
+        TextSelection.fromPosition(TextPosition(offset: term.length));
+    _focusNode.unfocus();
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = OHelperFunctions.isDarkMode(context);
@@ -49,7 +93,7 @@ class _SearchScreenState extends State<SearchScreen> {
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor:
-            isDark ? const Color(0xFF111111) : const Color(0xFFF8F6F3),
+            isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF5F3F0),
         body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,31 +111,30 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // ── Search bar ────────────────────────────────────────────────────────────
+  // ── Barre de recherche ────────────────────────────────────────────────────
 
   Widget _buildSearchBar(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Get.back(),
             child: Container(
-              width: 42,
-              height: 42,
+              width: 42, height: 42,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF222222) : Colors.white,
+                color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
                 borderRadius: BorderRadius.circular(13),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFF2E2E2E)
+                      ? Colors.white.withValues(alpha: 0.08)
                       : const Color(0xFFEEEBE6),
                 ),
               ),
               child: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 15,
-                color: isDark ? Colors.white70 : OColors.primary,
+                color: isDark ? Colors.white70 : const Color(0xFF1A1A1A),
               ),
             ),
           ),
@@ -100,11 +143,11 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Container(
               height: 46,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1C1C1C) : Colors.white,
+                color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFF2A2A2A)
+                      ? Colors.white.withValues(alpha: 0.08)
                       : const Color(0xFFEEEBE6),
                 ),
               ),
@@ -113,7 +156,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 focusNode: _focusNode,
                 onChanged: (_) => setState(() {}),
                 style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF2C2A27),
+                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -122,7 +165,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   hintStyle: TextStyle(
                     color: isDark ? Colors.white30 : const Color(0xFFB0AAA2),
                     fontSize: 14,
-                    fontWeight: FontWeight.w400,
                   ),
                   prefixIcon: Icon(
                     Iconsax.search_normal,
@@ -136,23 +178,20 @@ class _SearchScreenState extends State<SearchScreen> {
                             setState(() {});
                           },
                           child: Padding(
-                            padding: const EdgeInsets.all(13),
+                            padding: const EdgeInsets.all(14),
                             child: Container(
-                              width: 18,
-                              height: 18,
+                              width: 16, height: 16,
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? Colors.white12
                                     : const Color(0xFFE8E4DF),
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 11,
-                                color: isDark
-                                    ? Colors.white60
-                                    : const Color(0xFF6E6660),
-                              ),
+                              child: Icon(Icons.close_rounded,
+                                  size: 10,
+                                  color: isDark
+                                      ? Colors.white60
+                                      : const Color(0xFF6E6660)),
                             ),
                           ),
                         )
@@ -170,7 +209,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // ── Discovery (empty query) ───────────────────────────────────────────────
+  // ── Discovery ─────────────────────────────────────────────────────────────
 
   Widget _buildDiscovery(bool isDark) {
     return SingleChildScrollView(
@@ -178,98 +217,192 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 10),
-          _sectionLabel('discover'.tr, isDark),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
+
+          // Styles
+          _sectionLabel(
+              _isEn ? 'Styles' : 'Styles', isDark),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 76,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              physics: const BouncingScrollPhysics(),
+              itemCount: _discoverItems.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) =>
+                  _discoverCard(_discoverItems[i], isDark),
+            ),
+          ),
+
+          const SizedBox(height: 26),
+
+          // Tendances
+          _sectionLabel(
+              _isEn ? 'Trending' : 'Tendances', isDark),
+          const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Wrap(
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                'category_men',
-                'category_women',
-                'category_kids',
-                'category_accessories',
-              ].map((k) => _buildCategoryChip(k.tr, isDark)).toList(),
+              spacing: 8, runSpacing: 8,
+              children: _trending
+                  .asMap()
+                  .entries
+                  .map((e) => _trendTag(e.value, e.key < 3, isDark))
+                  .toList(),
             ),
           ),
-          const SizedBox(height: 24),
-          _sectionLabel('popular_searches'.tr, isDark),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                'subcategory_dresses',
-                'subcategory_shirts',
-                'subcategory_shoes',
-                'subcategory_bags',
-                'subcategory_jewelry',
-              ].map((k) => _buildTrendingTag(k.tr, isDark)).toList(),
-            ),
-          ),
-          const SizedBox(height: 24),
+
+          const SizedBox(height: 26),
+
+          // Suggestions
           _sectionLabel('suggested_for_you'.tr, isDark),
-          const SizedBox(height: 10),
-          _buildSuggestionsVertical(isDark),
+          const SizedBox(height: 12),
+          _buildSuggestions(isDark),
           const SizedBox(height: 32),
         ],
       ),
     );
   }
 
+  // ── Section label ─────────────────────────────────────────────────────────
+
   Widget _sectionLabel(String text, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.2,
-          color: isDark ? Colors.white : OColors.primary,
+      child: Row(
+        children: [
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+              color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : const Color(0xFFEEEBE6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Discover card ─────────────────────────────────────────────────────────
+
+  Widget _discoverCard(_DiscoverItem item, bool isDark) {
+    return GestureDetector(
+      onTap: () => _search(item.label),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.07)
+                : const Color(0xFFEEEBE6),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(item.icon, size: 16,
+                color: isDark ? Colors.white38 : OColors.primary),
+            const SizedBox(height: 6),
+            Text(
+              item.label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white70 : const Color(0xFF1A1A1A),
+                letterSpacing: -0.1,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ── Suggestion rows ───────────────────────────────────────────────────────
+  // ── Trend tag ─────────────────────────────────────────────────────────────
 
-  Widget _buildSuggestionsVertical(bool isDark) {
+  Widget _trendTag(String label, bool isTop, bool isDark) {
+    return GestureDetector(
+      onTap: () => _search(label),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isTop
+              ? OColors.primary.withValues(alpha: isDark ? 0.12 : 0.07)
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.04)
+                  : const Color(0xFFF4F1EC)),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: isTop
+                ? OColors.primary.withValues(alpha: 0.20)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.07)
+                    : const Color(0xFFE8E4DE)),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isTop ? FontWeight.w700 : FontWeight.w500,
+            color: isTop
+                ? OColors.primary
+                : (isDark ? Colors.white54 : const Color(0xFF4A4542)),
+            letterSpacing: -0.1,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Suggestions ───────────────────────────────────────────────────────────
+
+  Widget _buildSuggestions(bool isDark) {
     return Obx(() {
       if (productController.isLoading.value) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
-            children: List.generate(
-              4,
-              (_) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: OSkeleton(
-                    height: 62, width: double.infinity, radius: 14),
-              ),
-            ),
+            children: List.generate(4, (_) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: OSkeleton(
+                  height: 64, width: double.infinity, radius: 14),
+            )),
           ),
         );
       }
 
-      // Only show products explicitly marked as featured
-      final suggestions = productController.featuredProducts
+      final list = productController.featuredProducts
           .where((p) => p.isFeatured)
           .take(6)
           .toList();
-      if (suggestions.isEmpty) return const SizedBox.shrink();
+
+      if (list.isEmpty) return const SizedBox.shrink();
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           children: [
-            for (int i = 0; i < suggestions.length; i++) ...[
-              _buildSuggestionRow(suggestions[i], isDark),
-              if (i < suggestions.length - 1) const SizedBox(height: 8),
+            for (int i = 0; i < list.length; i++) ...[
+              _productRow(list[i], isDark),
+              if (i < list.length - 1) const SizedBox(height: 7),
             ],
           ],
         ),
@@ -277,28 +410,29 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  Widget _buildSuggestionRow(ProductModel product, bool isDark) {
+  // ── Product row ───────────────────────────────────────────────────────────
+
+  Widget _productRow(ProductModel product, bool isDark) {
     return GestureDetector(
       onTap: () => Get.to(() => ProductDetail(product: product)),
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1C) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          borderRadius: BorderRadius.circular(15),
           border: Border.all(
             color: isDark
-                ? const Color(0xFF2A2A2A)
-                : const Color(0xFFF0EDE8),
+                ? Colors.white.withValues(alpha: 0.07)
+                : const Color(0xFFEEEBE6),
           ),
         ),
         child: Row(
           children: [
             // Thumbnail
             ClipRRect(
-              borderRadius: BorderRadius.circular(9),
+              borderRadius: BorderRadius.circular(10),
               child: SizedBox(
-                width: 46,
-                height: 46,
+                width: 46, height: 46,
                 child: Image(
                   image: product.thumbnail.startsWith('http')
                       ? NetworkImage(product.thumbnail)
@@ -306,10 +440,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: isDark
-                        ? const Color(0xFF2A2A2A)
+                        ? Colors.white.withValues(alpha: 0.06)
                         : const Color(0xFFF3F0EC),
-                    child: Icon(Iconsax.image,
-                        size: 18,
+                    child: Icon(Iconsax.image, size: 16,
                         color: isDark
                             ? Colors.white24
                             : const Color(0xFFCCC8C2)),
@@ -317,11 +450,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 11),
+            const SizedBox(width: 12),
             // Info
             Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -329,43 +461,53 @@ class _SearchScreenState extends State<SearchScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? Colors.white
-                          : const Color(0xFF2C2A27),
+                      fontSize: 13, fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF1A1A1A),
                       letterSpacing: -0.1,
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    OLogisticsCalculator.formatFee(product.price),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: OColors.primary.withValues(alpha: 0.85),
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    if (product.fabric != null &&
+                        product.fabric!.isNotEmpty) ...[
+                      Text(
+                        product.fabric!,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark
+                              ? Colors.white38
+                              : const Color(0xFFB0AAA2),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Container(
+                          width: 3, height: 3,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white24
+                                : const Color(0xFFCCC8C4),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
+                    Text(
+                      OLogisticsCalculator.formatFeeLocalized(product.price),
+                      style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w700,
+                        color: OColors.primary,
+                      ),
                     ),
-                  ),
+                  ]),
                 ],
               ),
             ),
             // Chevron
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF282828)
-                    : const Color(0xFFF5F2EE),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 11,
-                color: isDark
-                    ? Colors.white38
-                    : const Color(0xFFB0AAA2),
-              ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 12,
+              color: isDark ? Colors.white24 : const Color(0xFFCCC8C4),
             ),
           ],
         ),
@@ -373,237 +515,147 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // ── Search results ────────────────────────────────────────────────────────
+  // ── Résultats ─────────────────────────────────────────────────────────────
 
   Widget _buildResults(String query, bool isDark) {
     return Obx(() {
       if (productController.isLoading.value) {
         return const Center(
-            child: CircularProgressIndicator(color: OColors.primary));
+          child: CircularProgressIndicator(
+              color: OColors.primary, strokeWidth: 1.5),
+        );
       }
 
       final results = productController.featuredProducts.where((p) {
         final title = p.title.toLowerCase();
         final category = (p.categoryName ?? '').toLowerCase();
-        return title.contains(query) || category.contains(query);
+        final fabric = (p.fabric ?? '').toLowerCase();
+        final tags = p.tags.join(' ').toLowerCase();
+        return title.contains(query) ||
+            category.contains(query) ||
+            fabric.contains(query) ||
+            tags.contains(query);
       }).toList();
 
       if (results.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1C1C1C)
-                      : const Color(0xFFF0EDE8),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(Iconsax.search_status,
-                    size: 28,
-                    color: isDark
-                        ? Colors.white24
-                        : const Color(0xFFB0AAA2)),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Aucun résultat pour "$query"',
-                style: TextStyle(
-                  color: isDark ? Colors.white38 : const Color(0xFFB0AAA2),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        );
+        return _buildEmptyState(query, isDark);
       }
 
-      return ListView.separated(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: results.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (_, i) => _buildResultRow(results[i], isDark),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+            child: Text(
+              _isEn
+                  ? '${results.length} result${results.length > 1 ? 's' : ''}'
+                  : '${results.length} résultat${results.length > 1 ? 's' : ''}',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.white38 : const Color(0xFFB0AAA2),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.separated(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              itemCount: results.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 7),
+              itemBuilder: (_, i) => _productRow(results[i], isDark),
+            ),
+          ),
+        ],
       );
     });
   }
 
-  Widget _buildResultRow(ProductModel product, bool isDark) {
-    return GestureDetector(
-      onTap: () => Get.to(() => ProductDetail(product: product)),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1C) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFF2A2A2A)
-                : const Color(0xFFF0EDE8),
-          ),
-        ),
-        child: Row(
+  // ── État vide ─────────────────────────────────────────────────────────────
+
+  Widget _buildEmptyState(String query, bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(9),
-              child: SizedBox(
-                width: 46,
-                height: 46,
-                child: Image(
-                  image: product.thumbnail.startsWith('http')
-                      ? NetworkImage(product.thumbnail)
-                      : AssetImage(product.thumbnail) as ImageProvider,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: isDark
-                        ? const Color(0xFF2A2A2A)
-                        : const Color(0xFFF3F0EC),
-                    child: Icon(Iconsax.image,
-                        size: 18,
-                        color: isDark
-                            ? Colors.white24
-                            : const Color(0xFFCCC8C2)),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? Colors.white
-                          : const Color(0xFF2C2A27),
-                      letterSpacing: -0.1,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    OLogisticsCalculator.formatFee(product.price),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: OColors.primary.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             Container(
-              width: 26,
-              height: 26,
+              width: 56, height: 56,
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF282828)
-                    : const Color(0xFFF5F2EE),
-                borderRadius: BorderRadius.circular(8),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : const Color(0xFFF0EDE8),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 11,
-                color: isDark ? Colors.white38 : const Color(0xFFB0AAA2),
-              ),
+              child: Icon(Iconsax.search_status, size: 24,
+                  color: isDark ? Colors.white24 : const Color(0xFFB0AAA2)),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Category chip ─────────────────────────────────────────────────────────
-
-  Widget _buildCategoryChip(String label, bool isDark) {
-    return GestureDetector(
-      onTap: () {
-        _searchController.text = label;
-        _searchController.selection = TextSelection.fromPosition(
-            TextPosition(offset: label.length));
-        setState(() {});
-      },
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: isDark
-              ? const Color(0xFF1C1C1C)
-              : OColors.primary.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFF2E2E2E)
-                : OColors.primary.withValues(alpha: 0.1),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isDark ? Colors.white70 : OColors.primary,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Trending tag ──────────────────────────────────────────────────────────
-
-  Widget _buildTrendingTag(String label, bool isDark) {
-    return GestureDetector(
-      onTap: () {
-        _searchController.text = label;
-        _searchController.selection = TextSelection.fromPosition(
-            TextPosition(offset: label.length));
-        setState(() {});
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: isDark
-              ? const Color(0xFF1C1C1C)
-              : const Color(0xFFF0EDE8),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFF2A2A2A)
-                : const Color(0xFFE8E4DE),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Iconsax.trend_up,
-                size: 12,
-                color: isDark
-                    ? Colors.white30
-                    : const Color(0xFFB0AAA2)),
-            const SizedBox(width: 5),
+            const SizedBox(height: 16),
             Text(
-              label,
+              _isEn
+                  ? 'No results for "$query"'
+                  : 'Aucun résultat pour\n« $query »',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color: isDark
-                    ? Colors.white60
-                    : const Color(0xFF6E6660),
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
+                fontSize: 14, fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white54 : const Color(0xFF4A4542),
+                height: 1.4,
               ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _isEn
+                  ? 'Try one of these searches'
+                  : 'Essayez l\'une de ces recherches',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.white30 : const Color(0xFFB0AAA2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 8, runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: _trending.take(4).map((term) =>
+                GestureDetector(
+                  onTap: () => _search(term),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.04)
+                          : const Color(0xFFF4F1EC),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.07)
+                            : const Color(0xFFE8E4DE),
+                      ),
+                    ),
+                    child: Text(term,
+                      style: TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? Colors.white54
+                            : const Color(0xFF4A4542),
+                      ),
+                    ),
+                  ),
+                ),
+              ).toList(),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+class _DiscoverItem {
+  const _DiscoverItem(this.label, this.icon);
+  final String label;
+  final IconData icon;
 }

@@ -47,29 +47,29 @@ class SettingsScreen extends StatelessWidget {
                     _tile(
                       isDark: isDark,
                       icon: Iconsax.user_edit,
-                      title: 'Mes informations',
-                      subtitle: 'Modifier votre profil',
+                      title: 'my_info'.tr,
+                      subtitle: 'edit_profile_sub'.tr,
                       onTap: () => Get.to(() => const ProfileScreen()),
                     ),
                     _tile(
                       isDark: isDark,
                       icon: Iconsax.heart,
-                      title: 'Mes favoris',
-                      subtitle: 'Produits sauvegardés',
+                      title: 'my_favorites_label'.tr,
+                      subtitle: 'saved_products'.tr,
                       onTap: () => Get.to(() => const WishlistScreen()),
                     ),
                     _tile(
                       isDark: isDark,
                       icon: Iconsax.box,
-                      title: 'Mes commandes',
-                      subtitle: 'Historique et suivi',
+                      title: 'my_orders_label'.tr,
+                      subtitle: 'order_history'.tr,
                       onTap: () => Get.to(() => const OrderScreen()),
                     ),
                     _tile(
                       isDark: isDark,
                       icon: Iconsax.location,
-                      title: 'Mes adresses',
-                      subtitle: 'Adresses de livraison',
+                      title: 'my_addresses_label'.tr,
+                      subtitle: 'delivery_addresses'.tr,
                       onTap: () => Get.to(() => const UserAddressScreen()),
                     ),
                     const SizedBox(height: 26),
@@ -78,16 +78,16 @@ class SettingsScreen extends StatelessWidget {
                     _tile(
                       isDark: isDark,
                       icon: Iconsax.shield_security,
-                      title: 'Sécurité',
-                      subtitle: 'Mot de passe et accès',
+                      title: 'security'.tr,
+                      subtitle: 'password_access'.tr,
                       onTap: () =>
                           Get.to(() => const SecuritySettingsScreen()),
                     ),
                     _tile(
                       isDark: isDark,
                       icon: Iconsax.notification,
-                      title: 'Notifications',
-                      subtitle: 'Gérer vos notifications',
+                      title: 'notifications'.tr,
+                      subtitle: 'manage_notifications'.tr,
                       onTap: () => Get.to(() => const NotificationsScreen()),
                     ),
                     const SizedBox(height: 36),
@@ -126,7 +126,7 @@ class SettingsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Mon profil',
+            'my_profile'.tr,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w800,
@@ -177,7 +177,7 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       Text(
                         user.fullName.trim().isEmpty
-                            ? 'Bienvenue !'
+                            ? 'welcome_guest'.tr
                             : user.fullName,
                         style: TextStyle(
                           fontSize: 16,
@@ -188,7 +188,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        user.email.isEmpty ? 'Non connecté' : user.email,
+                        user.email.isEmpty ? 'not_connected'.tr : user.email,
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark
@@ -203,7 +203,7 @@ class SettingsScreen extends StatelessWidget {
                           child: GestureDetector(
                             onTap: () => Get.to(() => const LoginScreen()),
                             child: Text(
-                              'Se connecter →',
+                              'sign_in_arrow'.tr,
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -235,7 +235,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Modifier',
+                      'edit'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -402,7 +402,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              'Se déconnecter',
+              'sign_out'.tr,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

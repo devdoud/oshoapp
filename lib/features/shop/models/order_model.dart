@@ -14,6 +14,7 @@ class OrderModel {
   final DateTime? customerReceivedAt;
   final String? primaryTailorId;
   final TailorReviewModel? tailorReview;
+  final String? customerNote;
 
   OrderModel({
     required this.id,
@@ -29,6 +30,7 @@ class OrderModel {
     this.customerReceivedAt,
     this.primaryTailorId,
     this.tailorReview,
+    this.customerNote,
   });
 
   String get formattedOrderDate => OHelperFunctions.getFormattedDate(orderDate);
@@ -87,7 +89,7 @@ class OrderModel {
           : null,
       primaryTailorId: json['primary_tailor_id'] as String?,
       tailorReview: reviews.isEmpty ? null : reviews.first,
-      // Supabase join returns 'order_items', fallback to 'items'
+      customerNote: json['customer_note'] as String?,
       items: ((json['order_items'] ?? json['items']) as List<dynamic>? ?? [])
           .map((item) => OrderItemModel.fromJson(item as Map<String, dynamic>))
           .toList(),

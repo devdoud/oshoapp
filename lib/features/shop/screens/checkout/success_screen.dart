@@ -57,10 +57,10 @@ class OrderSuccessScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            const Text(
-              "Merci pour votre confiance.\nVotre maître tailleur a bien reçu votre création unique et commence la préparation.",
+            Text(
+              'order_success_sub'.tr,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                   color: Colors.grey,
                   height: 1.6,
                   fontSize: 15,
@@ -93,7 +93,7 @@ class OrderSuccessScreen extends StatelessWidget {
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => Get.offAll(() => const NavigationMenu()),
-              child: Text("Retour à l'accueil",
+              child: Text('back_to_home'.tr,
                   style: TextStyle(color: Colors.grey[600])),
             )
           ],

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:osho/common/widgets/loaders/loader.dart';
 import 'package:osho/features/measurement/models/standard_size_model.dart';
+import 'package:osho/features/measurement/screens/measurement_tutorial.dart';
 import 'package:osho/features/personalization/controllers/measurement_controller.dart';
 import 'package:osho/features/personalization/models/measurement_profile_model.dart';
 import 'package:osho/navigation_menu.dart';
@@ -40,6 +41,12 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
   final _shoulderController = TextEditingController();
   final _sleeveController = TextEditingController();
   final _inseamController = TextEditingController();
+  final _upperArmController = TextEditingController();
+  final _backLengthController = TextEditingController();
+  final _dressLengthController = TextEditingController();
+  final _thighController = TextEditingController();
+  final _trouserLengthController = TextEditingController();
+  final _bustHeightController = TextEditingController();
 
   String _selectedGender = 'femme';
   String? _selectedTopSize;
@@ -55,6 +62,12 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
         _shoulderController,
         _sleeveController,
         _inseamController,
+        _upperArmController,
+        _backLengthController,
+        _dressLengthController,
+        _thighController,
+        _trouserLengthController,
+        _bustHeightController,
       ];
 
   @override
@@ -74,6 +87,12 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
       _shoulderController.text = widget.profile!.shoulder?.toString() ?? '';
       _sleeveController.text = widget.profile!.sleeve?.toString() ?? '';
       _inseamController.text = widget.profile!.inseam?.toString() ?? '';
+      _upperArmController.text = widget.profile!.upperArm?.toString() ?? '';
+      _backLengthController.text = widget.profile!.backLength?.toString() ?? '';
+      _dressLengthController.text = widget.profile!.dressLength?.toString() ?? '';
+      _thighController.text = widget.profile!.thigh?.toString() ?? '';
+      _trouserLengthController.text = widget.profile!.trouserLength?.toString() ?? '';
+      _bustHeightController.text = widget.profile!.bustHeight?.toString() ?? '';
     }
 
     for (final controller in [_nameController, ..._measurementControllers]) {
@@ -97,6 +116,12 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
     _shoulderController.dispose();
     _sleeveController.dispose();
     _inseamController.dispose();
+    _upperArmController.dispose();
+    _backLengthController.dispose();
+    _dressLengthController.dispose();
+    _thighController.dispose();
+    _trouserLengthController.dispose();
+    _bustHeightController.dispose();
     super.dispose();
   }
 
@@ -110,9 +135,13 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
       if (size.height != null) _heightController.text = size.height!.toStringAsFixed(0);
       if (size.weight != null) _weightController.text = size.weight!.toStringAsFixed(0);
       _neckController.text = size.neck.toStringAsFixed(0);
-      _chestController.text = size.chest.toStringAsFixed(0);
+      if (size.chest != null) _chestController.text = size.chest!.toStringAsFixed(0);
       _shoulderController.text = size.shoulder.toStringAsFixed(0);
       _sleeveController.text = size.sleeve.toStringAsFixed(0);
+      if (size.upperArm != null) _upperArmController.text = size.upperArm!.toStringAsFixed(0);
+      if (size.backLength != null) _backLengthController.text = size.backLength!.toStringAsFixed(0);
+      if (size.dressLength != null) _dressLengthController.text = size.dressLength!.toStringAsFixed(0);
+      if (size.bustHeight != null) _bustHeightController.text = size.bustHeight!.toStringAsFixed(0);
     });
   }
 
@@ -122,6 +151,8 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
       _waistController.text = size.waist.toStringAsFixed(0);
       if (size.hips != null) _hipsController.text = size.hips!.toStringAsFixed(0);
       _inseamController.text = size.inseam.toStringAsFixed(0);
+      if (size.thigh != null) _thighController.text = size.thigh!.toStringAsFixed(0);
+      if (size.trouserLength != null) _trouserLengthController.text = size.trouserLength!.toStringAsFixed(0);
     });
   }
 
@@ -181,6 +212,12 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
       shoulder: double.tryParse(_shoulderController.text),
       sleeve: double.tryParse(_sleeveController.text),
       inseam: double.tryParse(_inseamController.text),
+      upperArm: double.tryParse(_upperArmController.text),
+      backLength: double.tryParse(_backLengthController.text),
+      dressLength: double.tryParse(_dressLengthController.text),
+      thigh: double.tryParse(_thighController.text),
+      trouserLength: double.tryParse(_trouserLengthController.text),
+      bustHeight: double.tryParse(_bustHeightController.text),
     );
 
     final saved = await controller.saveMeasurement(profile);
@@ -189,6 +226,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
       return;
     }
 
+    if (!mounted) return;
     if (Navigator.canPop(context)) {
       Get.back();
       if (widget.profile == null && Navigator.canPop(context)) {
@@ -228,6 +266,36 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
             tooltip: 'Retour',
             onPressed: () => Get.back(),
           ),
+          actions: [
+            GestureDetector(
+              onTap: () => Get.to(
+                () => const MeasurementTutorialScreen(allowBack: true),
+              ),
+              child: Container(
+                margin: const EdgeInsets.only(right: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: OColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Iconsax.video_play, size: 14, color: OColors.primary),
+                    const SizedBox(width: 5),
+                    Text(
+                      Get.locale?.languageCode == 'en' ? 'Guide' : 'Guide vidéo',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: OColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -339,108 +407,51 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
               const SizedBox(height: 18),
               _buildSectionCard(
                 context,
-                title: 'Mensurations precises',
-                subtitle: 'Prenez chaque mesure calmement avec un metre ruban souple.',
+                title: 'Mensurations précises',
+                subtitle: 'Prenez chaque mesure calmement avec un mètre ruban souple.',
                 cardColor: cardColor,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextField(
-                            context,
-                            controller: _neckController,
-                            label: 'Tour de cou',
-                            icon: Iconsax.ruler,
-                            hintText: '36',
-                            suffix: 'cm',
-                            keyboardType: TextInputType.number,
-                            cardColor: pageColor,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildTextField(
-                            context,
-                            controller: _chestController,
-                            label: 'Poitrine',
-                            icon: Iconsax.ruler,
-                            hintText: '92',
-                            suffix: 'cm',
-                            keyboardType: TextInputType.number,
-                            cardColor: pageColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextField(
-                            context,
-                            controller: _waistController,
-                            label: 'Taille',
-                            icon: Iconsax.ruler,
-                            hintText: '74',
-                            suffix: 'cm',
-                            keyboardType: TextInputType.number,
-                            cardColor: pageColor,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildTextField(
-                            context,
-                            controller: _hipsController,
-                            label: 'Hanches',
-                            icon: Iconsax.ruler,
-                            hintText: '98',
-                            suffix: 'cm',
-                            keyboardType: TextInputType.number,
-                            cardColor: pageColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextField(
-                            context,
-                            controller: _shoulderController,
-                            label: 'Epaules',
-                            icon: Iconsax.maximize_2,
-                            hintText: '42',
-                            suffix: 'cm',
-                            keyboardType: TextInputType.number,
-                            cardColor: pageColor,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildTextField(
-                            context,
-                            controller: _sleeveController,
-                            label: 'Manches',
-                            icon: Iconsax.ruler,
-                            hintText: '61',
-                            suffix: 'cm',
-                            keyboardType: TextInputType.number,
-                            cardColor: pageColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    _buildTextField(
-                      context,
-                      controller: _inseamController,
-                      label: 'Entrejambe',
-                      icon: Iconsax.ruler,
-                      hintText: '78',
-                      suffix: 'cm',
-                      keyboardType: TextInputType.number,
-                      cardColor: pageColor,
-                    ),
+                    // ── Haut du corps ────────────────────────────────────────
+                    _sectionSubLabel(context, 'Haut du corps', isDark),
+                    Row(children: [
+                      Expanded(child: _buildTextField(context, controller: _neckController, label: 'Tour de cou', icon: Iconsax.ruler, hintText: '36', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildTextField(context, controller: _chestController, label: 'Poitrine', icon: Iconsax.ruler, hintText: '92', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor)),
+                    ]),
+                    Row(children: [
+                      Expanded(child: _buildTextField(context, controller: _waistController, label: 'Taille', icon: Iconsax.ruler, hintText: '74', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildTextField(context, controller: _hipsController, label: 'Hanches', icon: Iconsax.ruler, hintText: '98', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor)),
+                    ]),
+                    Row(children: [
+                      Expanded(child: _buildTextField(context, controller: _shoulderController, label: 'Épaules', icon: Iconsax.maximize_2, hintText: '42', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildTextField(context, controller: _sleeveController, label: 'Manches', icon: Iconsax.ruler, hintText: '61', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor)),
+                    ]),
+                    Row(children: [
+                      Expanded(child: _buildTextField(context, controller: _upperArmController, label: 'Tour de bras', icon: Iconsax.ruler, hintText: '32', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor, required: false)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildTextField(context, controller: _backLengthController, label: 'Longueur dos', icon: Iconsax.ruler, hintText: '41', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor, required: false)),
+                    ]),
+                    Row(children: [
+                      Expanded(child: _buildTextField(context, controller: _dressLengthController, label: 'Longueur totale', icon: Iconsax.ruler, hintText: '140', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor, required: false)),
+                      const SizedBox(width: 12),
+                      if (_selectedGender == 'femme')
+                        Expanded(child: _buildTextField(context, controller: _bustHeightController, label: 'Hauteur poitrine', icon: Iconsax.ruler, hintText: '26', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor, required: false))
+                      else
+                        const Expanded(child: SizedBox()),
+                    ]),
+
+                    // ── Bas du corps ─────────────────────────────────────────
+                    _sectionSubLabel(context, 'Bas du corps', isDark),
+                    Row(children: [
+                      Expanded(child: _buildTextField(context, controller: _inseamController, label: 'Entrejambe', icon: Iconsax.ruler, hintText: '78', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildTextField(context, controller: _thighController, label: 'Tour de cuisse', icon: Iconsax.ruler, hintText: '56', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor, required: false)),
+                    ]),
+                    _buildTextField(context, controller: _trouserLengthController, label: 'Longueur pantalon', icon: Iconsax.ruler, hintText: '105', suffix: 'cm', keyboardType: TextInputType.number, cardColor: pageColor, required: false),
                   ],
                 ),
               ),
@@ -460,12 +471,12 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
           color: cardColor,
           border: Border(
             top: BorderSide(
-              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
+              color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.25 : 0.06),
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
               blurRadius: 24,
               offset: const Offset(0, -8),
             ),
@@ -478,7 +489,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$completedFields/10 champs completes',
+                '$completedFields/16 champs complétés',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: mutedColor,
                       fontWeight: FontWeight.w600,
@@ -541,11 +552,11 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
         color: cardColor,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05),
+          color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.18 : 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.05),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -573,6 +584,21 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
     );
   }
 
+  Widget _sectionSubLabel(BuildContext context, String label, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10, top: 4),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+          color: isDark ? Colors.white38 : const Color(0xFFB0AAA2),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField(
     BuildContext context, {
     required TextEditingController controller,
@@ -582,6 +608,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
     required Color cardColor,
     String? suffix,
     TextInputType keyboardType = TextInputType.text,
+    bool required = true,
   }) {
     final isDark = OHelperFunctions.isDarkMode(context);
 
@@ -591,7 +618,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
         controller: controller,
         keyboardType: keyboardType,
         validator: (value) {
-          if (value == null || value.trim().isEmpty) return 'Requis';
+          if (required && (value == null || value.trim().isEmpty)) return 'Requis';
           return null;
         },
         decoration: InputDecoration(
@@ -607,7 +634,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.08) : OColors.primary.withOpacity(0.06),
+                        color: isDark ? Colors.white.withValues(alpha: 0.08) : OColors.primary.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -637,7 +664,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
             ),
           ),
           focusedBorder: OutlineInputBorder(
@@ -683,14 +710,14 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
               ? LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [OColors.primary, OColors.primary.withOpacity(0.78)],
+                  colors: [OColors.primary, OColors.primary.withValues(alpha: 0.78)],
                 )
               : null,
-          color: isSelected ? null : (isDark ? Colors.white.withOpacity(0.03) : const Color(0xFFF9F5EF)),
+          color: isSelected ? null : (isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF9F5EF)),
           border: Border.all(
             color: isSelected
                 ? Colors.transparent
-                : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
+                : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
           ),
         ),
         child: Column(
@@ -700,7 +727,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withOpacity(0.14) : OColors.primary.withOpacity(0.08),
+                color: isSelected ? Colors.white.withValues(alpha: 0.14) : OColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(icon, color: isSelected ? Colors.white : OColors.primary),
@@ -717,7 +744,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
             Text(
               caption,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: isSelected ? Colors.white.withOpacity(0.76) : (isDark ? Colors.white60 : const Color(0xFF7A736B)),
+                    color: isSelected ? Colors.white.withValues(alpha: 0.76) : (isDark ? Colors.white60 : const Color(0xFF7A736B)),
                   ),
             ),
           ],
@@ -739,7 +766,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
         color: cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05),
+          color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
         ),
       ),
       child: Row(
@@ -748,7 +775,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFCC66).withOpacity(0.18),
+              color: const Color(0xFFFFCC66).withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(Iconsax.lamp_on, color: Color(0xFF9D6A00), size: 18),
@@ -810,7 +837,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
             selectedSize: _selectedTopSize,
             isDark: isDark,
             onSelect: _applyTopSize,
-            sublabel: (s) => 'poitrine ${s.chest.toStringAsFixed(0)}cm',
+            sublabel: (s) => s.chest != null ? 'poitrine ${s.chest!.toStringAsFixed(0)}cm' : null,
           ),
           const SizedBox(height: 16),
           Text(
@@ -834,9 +861,9 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: OColors.primary.withOpacity(0.08),
+                color: OColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: OColors.primary.withOpacity(0.2)),
+                border: Border.all(color: OColors.primary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -885,14 +912,14 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
                   ? LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [OColors.primary, OColors.primary.withOpacity(0.78)],
+                      colors: [OColors.primary, OColors.primary.withValues(alpha: 0.78)],
                     )
                   : null,
-              color: isSelected ? null : (isDark ? Colors.white.withOpacity(0.03) : const Color(0xFFF9F5EF)),
+              color: isSelected ? null : (isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF9F5EF)),
               border: Border.all(
                 color: isSelected
                     ? Colors.transparent
-                    : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
+                    : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
               ),
             ),
             child: Column(
@@ -910,7 +937,7 @@ class _ManualMeasurementEntryScreenState extends State<ManualMeasurementEntryScr
                     sub,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: isSelected
-                              ? Colors.white.withOpacity(0.76)
+                              ? Colors.white.withValues(alpha: 0.76)
                               : (isDark ? Colors.white60 : const Color(0xFF7A736B)),
                         ),
                   ),

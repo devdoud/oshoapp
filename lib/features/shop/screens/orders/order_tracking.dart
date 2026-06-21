@@ -110,7 +110,7 @@ class OrderTrackingScreen extends StatelessWidget {
                 ),
                 centerTitle: true,
                 title: Text(
-                  'Suivi de commande',
+                  'tracking_title'.tr,
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
@@ -132,7 +132,7 @@ class OrderTrackingScreen extends StatelessWidget {
 
                       // ── Timeline title ──────────────────────────────────
                       Text(
-                        'Statut de la commande',
+                        'order_status_title'.tr,
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
@@ -177,8 +177,8 @@ class OrderTrackingScreen extends StatelessWidget {
                         icon: Iconsax.home_2,
                         title: 'order_status_delivered'.tr,
                         subtitle: current.customerConfirmed
-                            ? 'Réception confirmée par vos soins.'
-                            : 'Confirmez ici lorsque la commande vous a bien été remise.',
+                            ? 'reception_confirmed_msg'.tr
+                            : 'reception_confirm_prompt'.tr,
                         isDone: isDeliveredDone,
                         isActive: isDeliveredActive,
                         isLast: true,
@@ -229,7 +229,7 @@ class OrderTrackingScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Retour à l\'accueil',
+                                'back_to_home'.tr,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -261,8 +261,9 @@ class OrderTrackingScreen extends StatelessWidget {
         : current.id.toUpperCase();
     final deliveryDate = current.deliveryDate ??
         current.orderDate.add(const Duration(days: 7));
+    final dateLocale = Get.locale?.languageCode == 'en' ? 'en_US' : 'fr_FR';
     final formattedDelivery =
-        DateFormat('d MMM yyyy', 'fr_FR').format(deliveryDate);
+        DateFormat('d MMM yyyy', dateLocale).format(deliveryDate);
     final styleData = OrderController.statusStyle(current.status);
     final statusLabel = styleData['label'] as String;
     final statusColor = Color(styleData['color'] as int);
@@ -352,7 +353,7 @@ class OrderTrackingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    OLogisticsCalculator.formatFee(current.totalAmount),
+                    OLogisticsCalculator.formatFeeLocalized(current.totalAmount),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
@@ -377,7 +378,7 @@ class OrderTrackingScreen extends StatelessWidget {
                     children: [
                       _headerMeta(
                         icon: Iconsax.calendar,
-                        label: DateFormat('d MMM yyyy', 'fr_FR')
+                        label: DateFormat('d MMM yyyy', dateLocale)
                             .format(current.orderDate),
                       ),
                       Container(
@@ -388,7 +389,8 @@ class OrderTrackingScreen extends StatelessWidget {
                       ),
                       _headerMeta(
                         icon: Iconsax.clock,
-                        label: 'Livr. est. $formattedDelivery',
+                        label: 'delivery_estimate'
+                            .trParams({'date': formattedDelivery}),
                       ),
                     ],
                   ),
@@ -450,7 +452,7 @@ class OrderTrackingScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Suivi cartographique',
+                'map_tracking'.tr,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
@@ -459,7 +461,7 @@ class OrderTrackingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Bientôt disponible',
+                'map_coming_soon'.tr,
                 style: TextStyle(
                   color: isDark ? Colors.white38 : const Color(0xFFB0AAA2),
                   fontSize: 11,
@@ -520,7 +522,7 @@ class OrderTrackingScreen extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Avez-vous bien reçu votre commande ?',
+                    'confirm_received_q'.tr,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
@@ -532,7 +534,7 @@ class OrderTrackingScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Confirmez la réception pour clôturer le suivi.',
+              'confirm_received_sub'.tr,
               style: TextStyle(
                 color: isDark ? Colors.white54 : const Color(0xFF888480),
                 fontSize: 12,
@@ -571,9 +573,9 @@ class OrderTrackingScreen extends StatelessWidget {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text(
-                          'Confirmer la réception',
-                          style: TextStyle(
+                      : Text(
+                          'confirm_received'.tr,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
@@ -620,7 +622,7 @@ class OrderTrackingScreen extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Votre avis compte',
+                    'rate_tailor_title'.tr,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
@@ -632,7 +634,7 @@ class OrderTrackingScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Notez la qualité du travail du tailleur pour aider la communauté.',
+              'rate_tailor_sub'.tr,
               style: TextStyle(
                 color: isDark ? Colors.white54 : const Color(0xFF888480),
                 fontSize: 12,
@@ -667,7 +669,7 @@ class OrderTrackingScreen extends StatelessWidget {
                               strokeWidth: 2, color: OColors.primary),
                         )
                       : Text(
-                          'Noter le tailleur',
+                          'rate_tailor'.tr,
                           style: TextStyle(
                             color: isDark ? Colors.white : OColors.primary,
                             fontWeight: FontWeight.w700,
@@ -702,7 +704,7 @@ class OrderTrackingScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Merci pour votre retour',
+            'thank_feedback'.tr,
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 13,
@@ -788,7 +790,7 @@ class OrderTrackingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Notez le travail du tailleur',
+                      'tailor_rating_title'.tr,
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 16,
@@ -798,7 +800,7 @@ class OrderTrackingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Une note simple nous aide à mieux suivre la qualité des prestations.',
+                      'tailor_rating_sub'.tr,
                       style: TextStyle(
                         color: isDark
                             ? Colors.white54
@@ -839,8 +841,7 @@ class OrderTrackingScreen extends StatelessWidget {
                         fontSize: 13,
                       ),
                       decoration: InputDecoration(
-                        hintText:
-                            'Ex : finition propre, délai respecté...',
+                        hintText: 'comment_hint'.tr,
                         hintStyle: TextStyle(
                           color: isDark
                               ? Colors.white38
@@ -895,9 +896,9 @@ class OrderTrackingScreen extends StatelessWidget {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text(
-                                        'Envoyer mon avis',
-                                        style: TextStyle(
+                                    : Text(
+                                        'send_review'.tr,
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w700,
                                           fontSize: 13,

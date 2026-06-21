@@ -157,14 +157,14 @@ class OrderController extends GetxController {
   static Map<String, dynamic> statusStyle(String status) {
     switch (status) {
       case 'delivered':
-        return {'color': 0xFF4CAF50, 'label': 'Livré'};
+        return {'color': 0xFF4CAF50, 'label': 'badge_delivered'.tr};
       case 'shipped':
-        return {'color': 0xFF2196F3, 'label': 'Expédié'};
+        return {'color': 0xFF2196F3, 'label': 'badge_shipped'.tr};
       case 'processing':
-        return {'color': 0xFFFF9800, 'label': 'En traitement'};
+        return {'color': 0xFFFF9800, 'label': 'badge_processing'.tr};
       case 'pending':
       default:
-        return {'color': 0xFFE91E8C, 'label': 'En cours'};
+        return {'color': 0xFFE91E8C, 'label': 'badge_pending'.tr};
     }
   }
 }

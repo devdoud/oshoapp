@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/sizes.dart';
-import 'package:osho/utils/constants/text_strings.dart';
 
 class OLoginHeader extends StatelessWidget {
   const OLoginHeader({
@@ -25,7 +25,7 @@ class OLoginHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
-            'Acces client',
+            'client_access'.tr,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: dark ? Colors.white70 : OColors.primary,
                   fontWeight: FontWeight.w700,
@@ -34,7 +34,7 @@ class OLoginHeader extends StatelessWidget {
         ),
         const SizedBox(height: OSizes.spaceBtwInputFields),
         Text(
-          OText.loginTitle,
+          'login_title'.tr,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             color: dark ? OColors.white : OColors.textprimary,
             fontSize: 38,
@@ -43,7 +43,7 @@ class OLoginHeader extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Retrouvez vos commandes, vos mesures et votre suivi en temps reel.',
+          'login_header_sub'.tr,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: dark ? Colors.white60 : OColors.grey2,
                 height: 1.5,

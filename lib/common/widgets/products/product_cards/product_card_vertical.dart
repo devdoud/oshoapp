@@ -132,7 +132,7 @@ class OProductCardVertical extends StatelessWidget {
                       // Price
                       Flexible(
                         child: Text(
-                          "${OLogisticsCalculator.formatAmount(product.price)} F",
+                          OLogisticsCalculator.formatFeeLocalized(product.price),
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context)
                               .textTheme

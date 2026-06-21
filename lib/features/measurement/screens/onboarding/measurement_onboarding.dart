@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:osho/features/personalization/controllers/measurement_controller.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
@@ -21,27 +22,24 @@ class _MeasurementOnboardingScreenState
   late final AnimationController _pulse;
   late final Animation<double> _pulseAnim;
 
-  static const _slides = [
+  List<_Slide> get _slides => [
     _Slide(
-      title: 'Prenez vos mesures',
-      desc:
-          'Mesurez chaque partie de votre corps avec précision pour une confection parfaitement ajustée.',
+      title: 'take_measures_title'.tr,
+      desc: 'take_measures_desc'.tr,
       icon: Iconsax.ruler,
-      accent: Color(0xFF1A1A1A),
+      accent: const Color(0xFF1A1A1A),
     ),
     _Slide(
-      title: 'Guide vidéo',
-      desc:
-          'Des tutoriels courts vous accompagnent pas à pas pour chaque zone du corps.',
+      title: 'video_guide'.tr,
+      desc: 'video_guide_desc'.tr,
       icon: Iconsax.video_play,
-      accent: Color(0xFF3B7DD8),
+      accent: const Color(0xFF3B7DD8),
     ),
     _Slide(
-      title: 'Profil enregistré',
-      desc:
-          'Sauvegardez vos mesures une seule fois et réutilisez-les pour toutes vos commandes futures.',
+      title: 'saved_profile'.tr,
+      desc: 'saved_profile_desc'.tr,
       icon: Iconsax.user_tick,
-      accent: Color(0xFF34C759),
+      accent: const Color(0xFF34C759),
     ),
   ];
 
@@ -158,8 +156,8 @@ class _MeasurementOnboardingScreenState
                       child: Center(
                         child: Text(
                           _currentPage == _slides.length - 1
-                              ? 'Commencer'
-                              : 'Suivant',
+                              ? 'start_btn'.tr
+                              : 'next'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -185,7 +183,7 @@ class _MeasurementOnboardingScreenState
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
-                          'Passer',
+                          'skip'.tr,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,

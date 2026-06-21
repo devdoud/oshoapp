@@ -57,6 +57,10 @@ dependencies:
   video_player: ^2.11.1
   chewie: ^1.13.1
 
+  # Push notifications
+  firebase_messaging: ^16.0.3
+  flutter_local_notifications: ^18.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

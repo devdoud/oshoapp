@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:osho/common/styles/spacing_styles.dart';
 import 'package:osho/features/authentication/screens/login/widgets/login_form.dart';
 import 'package:osho/features/authentication/screens/login/widgets/login_header.dart';
@@ -7,7 +8,6 @@ import 'package:osho/utils/helpers/helper_functions.dart';
 
 import '../../../../common/widgets/login_signup/form_divider.dart';
 import '../../../../common/widgets/login_signup/social_button.dart';
-import '../../../../utils/constants/text_strings.dart';
 
 
 class LoginScreen extends StatelessWidget {
@@ -52,7 +52,7 @@ class LoginScreen extends StatelessWidget {
                   children: [
                     OLoginForm(dark: dark),
                     const SizedBox(height: OSizes.spaceBtwSections / 2),
-                    const OFormDivider(dividertext: OText.or),
+                    OFormDivider(dividertext: 'or_connect_with'.tr),
                     const SizedBox(height: OSizes.spaceBtwInputFields / 2),
                     OSocialButon(dark: dark),
                   ],

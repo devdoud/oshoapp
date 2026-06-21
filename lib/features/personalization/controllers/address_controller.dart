@@ -79,6 +79,41 @@ class AddressController extends GetxController {
     }
   }
 
+  Future<bool> updateAddress(AddressModel address) async {
+    try {
+      isLoading.value = true;
+      final updated = await _addressRepository.updateAddress(address);
+      final idx = addresses.indexWhere((a) => a.id == address.id);
+      if (idx != -1) addresses[idx] = updated;
+      if (selectedAddress.value?.id == address.id) {
+        selectedAddress.value = updated;
+      }
+      OLoaders.successSnackBar(title: 'Succes', message: 'Adresse mise a jour.');
+      return true;
+    } catch (e) {
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible de modifier l\'adresse.');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteAddress(String id) async {
+    try {
+      isLoading.value = true;
+      await _addressRepository.deleteAddress(id);
+      addresses.removeWhere((a) => a.id == id);
+      if (selectedAddress.value?.id == id) {
+        _selectDefault(addresses);
+      }
+      OLoaders.successSnackBar(title: 'Succes', message: 'Adresse supprimee.');
+    } catch (e) {
+      OLoaders.errorSnackBar(title: 'Erreur', message: 'Impossible de supprimer l\'adresse.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   Future<void> selectAddress(AddressModel address,
       {bool makeDefault = false}) async {
     selectedAddress.value = address;

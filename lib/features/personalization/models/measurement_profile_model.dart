@@ -14,6 +14,14 @@ class MeasurementProfileModel {
   double? inseam;
   double? neck;
 
+  // ── Mesures supplémentaires pour tenues africaines ──────────────────────
+  double? upperArm;     // Tour de bras (biceps)
+  double? backLength;   // Longueur dos nuque → taille
+  double? dressLength;  // Longueur totale nuque → ourlet
+  double? thigh;        // Tour de cuisse
+  double? trouserLength; // Longueur pantalon taille → cheville
+  double? bustHeight;   // Hauteur poitrine (femme)
+
   MeasurementProfileModel({
     this.id,
     required this.userId,
@@ -29,6 +37,12 @@ class MeasurementProfileModel {
     this.sleeve,
     this.inseam,
     this.neck,
+    this.upperArm,
+    this.backLength,
+    this.dressLength,
+    this.thigh,
+    this.trouserLength,
+    this.bustHeight,
   });
 
   Map<String, dynamic> toJson() {
@@ -46,6 +60,12 @@ class MeasurementProfileModel {
       'sleeve': sleeve,
       'inseam': inseam,
       'neck': neck,
+      'upper_arm': upperArm,
+      'back_length': backLength,
+      'dress_length': dressLength,
+      'thigh': thigh,
+      'trouser_length': trouserLength,
+      'bust_height': bustHeight,
     };
   }
 
@@ -71,6 +91,12 @@ class MeasurementProfileModel {
       inseam:
           json['inseam'] != null ? (json['inseam'] as num).toDouble() : null,
       neck: json['neck'] != null ? (json['neck'] as num).toDouble() : null,
+      upperArm: json['upper_arm'] != null ? (json['upper_arm'] as num).toDouble() : null,
+      backLength: json['back_length'] != null ? (json['back_length'] as num).toDouble() : null,
+      dressLength: json['dress_length'] != null ? (json['dress_length'] as num).toDouble() : null,
+      thigh: json['thigh'] != null ? (json['thigh'] as num).toDouble() : null,
+      trouserLength: json['trouser_length'] != null ? (json['trouser_length'] as num).toDouble() : null,
+      bustHeight: json['bust_height'] != null ? (json['bust_height'] as num).toDouble() : null,
     );
   }
 

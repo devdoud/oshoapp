@@ -89,7 +89,7 @@ class _MeasurementTutorialScreenState
                         children: [
                           _buildIntro(isDark),
                           const SizedBox(height: 22),
-                          _buildSectionLabel('VIDÉOS', isDark),
+                          _buildSectionLabel('videos_section'.tr, isDark),
                           const SizedBox(height: 12),
                           _buildContent(isDark),
                         ],
@@ -146,7 +146,7 @@ class _MeasurementTutorialScreenState
                 const SizedBox(width: 12),
               ],
               Text(
-                'Guide de mesure',
+                'measure_guide_title'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -193,7 +193,7 @@ class _MeasurementTutorialScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Apprenez à vous mesurer',
+                  'learn_to_measure'.tr,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -202,7 +202,7 @@ class _MeasurementTutorialScreenState
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Suivez ces courtes vidéos pour chaque zone du corps. Une seule fois suffit.',
+                  'learn_to_measure_sub'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.white54 : const Color(0xFF888480),
@@ -438,7 +438,7 @@ class _MeasurementTutorialScreenState
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                'Réessayer',
+                'retry'.tr,
                 style: TextStyle(
                   color: isDark ? Colors.white70 : OColors.primary,
                   fontWeight: FontWeight.w600,
@@ -478,7 +478,7 @@ class _MeasurementTutorialScreenState
           ),
           const SizedBox(height: 12),
           Text(
-            'Aucun tutoriel disponible',
+            'no_tutorials'.tr,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -487,7 +487,7 @@ class _MeasurementTutorialScreenState
           ),
           const SizedBox(height: 5),
           Text(
-            'Les vidéos seront bientôt disponibles.',
+            'no_tutorials_sub'.tr,
             style: TextStyle(
               fontSize: 12,
               color: isDark ? Colors.white54 : const Color(0xFF888480),
@@ -504,7 +504,7 @@ class _MeasurementTutorialScreenState
 
   Widget _buildBottomBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF111111) : Colors.white,
         border: Border(
@@ -517,6 +517,7 @@ class _MeasurementTutorialScreenState
       ),
       child: SafeArea(
         top: false,
+        minimum: const EdgeInsets.only(bottom: 12),
         child: GestureDetector(
           onTap: () => Get.to(
             () => ManualMeasurementEntryScreen(
@@ -533,7 +534,7 @@ class _MeasurementTutorialScreenState
             ),
             child: Center(
               child: Text(
-                "J'ai compris, saisir mes mesures",
+                'understood_btn'.tr,
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,

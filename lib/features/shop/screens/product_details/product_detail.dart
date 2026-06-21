@@ -4,12 +4,14 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:osho/common/widgets/loaders/loader.dart';
 import 'package:osho/features/authentication/screens/login/login.dart';
-import 'package:osho/features/personalization/screens/modelcustom/custommodelstep1.dart';
+import 'package:osho/features/measurement/screens/manual_measurement_entry.dart';
+import 'package:osho/features/personalization/controllers/measurement_controller.dart';
+import 'package:osho/features/personalization/models/measurement_profile_model.dart';
 import 'package:osho/features/shop/controllers/cart_controller.dart';
-import 'package:osho/features/shop/controllers/customization_controller.dart';
 import 'package:osho/features/shop/controllers/favourites_controller.dart';
 import 'package:osho/features/shop/models/product_model.dart';
 import 'package:osho/features/shop/models/product_tag_model.dart';
+import 'package:osho/features/shop/screens/checkout/cart_checkout.dart';
 import 'package:osho/features/shop/screens/home/widgets/product_detail_image_slide.dart';
 import 'package:osho/data/repositories/shop/catalog_repository.dart';
 import 'package:osho/utils/constants/colors.dart';
@@ -28,12 +30,14 @@ class ProductDetail extends StatefulWidget {
 
 class _ProductDetailState extends State<ProductDetail> {
   late ProductModel _product;
+  List<ProductTagModel> _allTags = ProductTagModel.defaults;
 
   @override
   void initState() {
     super.initState();
     _product = widget.product;
     _refreshProduct();
+    _loadTags();
   }
 
   Future<void> _refreshProduct() async {
@@ -43,13 +47,18 @@ class _ProductDetailState extends State<ProductDetail> {
     }
   }
 
+  Future<void> _loadTags() async {
+    final tags = await CatalogRepository.instance.fetchPredefinedTags();
+    if (mounted) setState(() => _allTags = tags);
+  }
+
   ProductModel get product => _product;
 
   @override
   Widget build(BuildContext context) {
     final isDark = OHelperFunctions.isDarkMode(context);
     final favoriteController = Get.put(FavouritesController());
-    final cartController = Get.put(CartController());
+    Get.put(CartController());
     final bgColor = isDark ? const Color(0xFF121212) : const Color(0xFFFDFBF7);
     final surfaceColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
 
@@ -134,11 +143,11 @@ class _ProductDetailState extends State<ProductDetail> {
                         const SizedBox(height: 20),
                         _buildCraftDetailsCard(context, isDark, surfaceColor),
                         const SizedBox(height: 24),
-                        _sectionTitle(context, "L'histoire du tissu"),
+                        _sectionTitle(context, 'story_title'.tr),
                         const SizedBox(height: 12),
                         Text(
                           product.description ??
-                              "Ce modele unique allie tradition et modernite. Fabrique avec soin par nos artisans, il reflete l'elegance de la culture africaine.",
+                              'fabric_story_default'.tr,
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
@@ -225,30 +234,20 @@ class _ProductDetailState extends State<ProductDetail> {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () async {
-                            if (Supabase.instance.client.auth.currentUser ==
-                                null) {
-                              _showLoginRequiredSheet(
-                                context,
-                                action: 'ajouter ce produit au panier',
-                              );
+                          onPressed: () {
+                            if (Supabase.instance.client.auth.currentUser == null) {
+                              _showLoginRequiredSheet(context, action: 'ajouter ce produit au panier');
                             } else {
-                              await cartController.addItem(product);
-                              OLoaders.successSnackBar(
-                                title: 'Ajoute au panier',
-                                message:
-                                    '${product.title} a ete ajoute a votre panier.',
-                              );
+                              _showProfileSelectionSheet(context, action: 'cart');
                             }
                           },
                           icon: const Icon(Icons.add_shopping_cart, size: 18),
-                          label: const Text('Ajouter'),
+                          label: Text('add_to_cart_btn'.tr),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
                                 color: isDark ? Colors.white70 : OColors.primary,
                                 width: 1.4),
-                            foregroundColor:
-                                isDark ? Colors.white : OColors.primary,
+                            foregroundColor: isDark ? Colors.white : OColors.primary,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -260,11 +259,10 @@ class _ProductDetailState extends State<ProductDetail> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            if (Supabase.instance.client.auth.currentUser ==
-                                null) {
+                            if (Supabase.instance.client.auth.currentUser == null) {
                               _showLoginRequiredSheet(context);
                             } else {
-                              _showEnhancedCustomizationSheet(context);
+                              _showProfileSelectionSheet(context, action: 'order');
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -276,18 +274,15 @@ class _ProductDetailState extends State<ProductDetail> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                "Commander",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                ),
+                                'order_btn'.tr,
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                               ),
-                              SizedBox(width: 8),
-                              Icon(Iconsax.arrow_right_3, size: 17),
+                              const SizedBox(width: 8),
+                              const Icon(Iconsax.arrow_right_3, size: 17),
                             ],
                           ),
                         ),
@@ -326,7 +321,7 @@ class _ProductDetailState extends State<ProductDetail> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Collection Heritage',
+            'collection_heritage'.tr,
             style: TextStyle(
               color: OColors.primary.withValues(alpha: isDark ? 0.9 : 0.65),
               fontWeight: FontWeight.w700,
@@ -360,7 +355,7 @@ class _ProductDetailState extends State<ProductDetail> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      OLogisticsCalculator.formatFee(product.price),
+                      OLogisticsCalculator.formatFeeLocalized(product.price),
                       style:
                           Theme.of(context).textTheme.titleLarge?.copyWith(
                                 color: isDark
@@ -371,26 +366,12 @@ class _ProductDetailState extends State<ProductDetail> {
                               ),
                     ),
                   ),
-                  if (Get.locale?.languageCode == 'en' &&
-                      product.priceUsd != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '\$${product.priceUsd!.toStringAsFixed(product.priceUsd! % 1 == 0 ? 0 : 2)} USD',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark
-                            ? Colors.white38
-                            : const Color(0xFFB0AAA2),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
                 ],
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Confection artisanale, ajustee a vos mesures.',
+                  'artisanal_craft_note'.tr,
                   style: TextStyle(
                     color: isDark ? Colors.white60 : Colors.grey[600],
                     fontSize: 12,
@@ -416,29 +397,29 @@ class _ProductDetailState extends State<ProductDetail> {
     final details = [
       _CraftDetail(
         icon: Iconsax.shapes,
-        label: 'Matiere',
+        label: 'material'.tr,
         value: _cleanValue(product.fabric),
       ),
       _CraftDetail(
         icon: Iconsax.picture_frame,
-        label: 'Modele',
+        label: 'model_label'.tr,
         value: model,
       ),
       _CraftDetail(
         icon: Iconsax.magicpen,
-        label: 'Broderie',
+        label: 'embroidery'.tr,
         value: _cleanValue(product.embroidery),
       ),
       _CraftDetail(
         icon: Iconsax.tick_circle,
-        label: 'Finition',
+        label: 'finishing_label'.tr,
         value: _cleanValue(product.accessory),
       ),
       if (product.estimatedDays != null && product.estimatedDays! > 0)
         _CraftDetail(
           icon: Iconsax.timer_1,
-          label: 'Confection',
-          value: '${product.estimatedDays} jours',
+          label: 'crafting_time_label'.tr,
+          value: 'days_value'.trParams({'count': '${product.estimatedDays}'}),
         ),
     ];
 
@@ -472,14 +453,14 @@ class _ProductDetailState extends State<ProductDetail> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Details de confection',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                    Text(
+                      'craft_title'.tr,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 15),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Matiere, modele et finitions definis pour ce produit.',
+                      'craft_subtitle'.tr,
                       style: TextStyle(
                         color: isDark ? Colors.white60 : Colors.grey[600],
                         fontSize: 12,
@@ -577,14 +558,35 @@ class _ProductDetailState extends State<ProductDetail> {
     );
   }
 
+  /// Normalise (minuscules, sans accents) pour matcher des tags legacy
+  /// enregistrés avec des variantes ("Nouveauté", "CÉRÉMONIE", "nouveaute"...).
+  String _normalizeTagKey(String s) {
+    const accents = {
+      'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+      'à': 'a', 'â': 'a', 'ä': 'a',
+      'î': 'i', 'ï': 'i',
+      'ô': 'o', 'ö': 'o',
+      'ù': 'u', 'û': 'u', 'ü': 'u',
+      'ç': 'c',
+    };
+    var result = s.toLowerCase().trim();
+    accents.forEach((k, v) => result = result.replaceAll(k, v));
+    return result;
+  }
+
   String _tagLabel(String slug) {
-    try {
-      return ProductTagModel.defaults
-          .firstWhere((t) => t.name == slug)
-          .label;
-    } catch (_) {
-      return slug;
+    final langCode = Get.locale?.languageCode == 'en' ? 'en' : 'fr';
+    final key = _normalizeTagKey(slug);
+    for (final list in [_allTags, ProductTagModel.defaults]) {
+      for (final t in list) {
+        if (_normalizeTagKey(t.name) == key ||
+            _normalizeTagKey(t.label) == key ||
+            (t.labelEn != null && _normalizeTagKey(t.labelEn!) == key)) {
+          return t.labelFor(langCode);
+        }
+      }
     }
+    return slug;
   }
 
   void _showFullscreenImage(BuildContext context, ProductModel product) {
@@ -746,16 +748,17 @@ class _ProductDetailState extends State<ProductDetail> {
 
   Widget _buildPerfectForSection(BuildContext context, bool isDark) {
     final isEn = Get.locale?.languageCode == 'en';
+    final langCode = isEn ? 'en' : 'fr';
     final stored = product.perfectFor ?? [];
-    // Supabase values take priority; fallback = 3 defaults only
+    // Supabase values (bilingues) take priority; fallback = 3 defaults only
     final items = stored.isNotEmpty
-        ? stored
+        ? stored.map((p) => p.forLocale(langCode)).toList()
         : (isEn ? _perfectForEnDefault : _perfectForFrDefault);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle(context, isEn ? 'Perfect For' : 'Parfait pour'),
+        _sectionTitle(context, 'perfect_for'.tr),
         const SizedBox(height: 12),
         Container(
           width: double.infinity,
@@ -824,6 +827,19 @@ class _ProductDetailState extends State<ProductDetail> {
       if (cleaned != null && cleaned.isNotEmpty) return cleaned;
     }
     return 'A preciser';
+  }
+
+  void _showProfileSelectionSheet(BuildContext context, {required String action}) {
+    Get.put(MeasurementController());
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: _ProfileSelectionSheet(product: product, action: action),
+      ),
+    );
   }
 
   void _showLoginRequiredSheet(
@@ -896,480 +912,496 @@ class _ProductDetailState extends State<ProductDetail> {
     );
   }
 
-  void _showEnhancedCustomizationSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: _SizeSelectionSheet(product: product),
-      ),
-    );
-  }
 }
 
-// ─── Size selection bottom sheet ──────────────────────────────────────────────
+// ─── Profile selection bottom sheet ──────────────────────────────────────────
 
-class _SizeSelectionSheet extends StatefulWidget {
-  const _SizeSelectionSheet({required this.product});
+class _ProfileSelectionSheet extends StatefulWidget {
+  const _ProfileSelectionSheet({required this.product, required this.action});
   final ProductModel product;
+  final String action; // 'cart' | 'order'
 
   @override
-  State<_SizeSelectionSheet> createState() => _SizeSelectionSheetState();
+  State<_ProfileSelectionSheet> createState() => _ProfileSelectionSheetState();
 }
 
-class _SizeSelectionSheetState extends State<_SizeSelectionSheet> {
-  int _tab = 0;
+class _ProfileSelectionSheetState extends State<_ProfileSelectionSheet> {
+  bool _forSelf = true;
+  MeasurementProfileModel? _selectedProfile;
+  MeasurementProfileModel? _selectedProfile2;
+  bool _isLoading = false;
 
-  // Partner 1
-  String _gender = 'femme';
-  String? _topSize;
-  String? _bottomSize;
+  MeasurementController get _mc => MeasurementController.instance;
 
-  // Partner 2 (couple only)
-  String _gender2 = 'homme';
-  String? _topSize2;
-  String? _bottomSize2;
-
-  final _recipientCtrl = TextEditingController();
-
-  bool get _isCouple {
-    final p = widget.product;
-    return [
-      p.categoryType ?? '',
-      p.categoryName ?? '',
-      p.categorySlug ?? '',
-      p.categoryStyle ?? '',
-    ].any((f) => f.toLowerCase().contains('couple'));
-  }
-
-  static const _topSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-  static const _bottomSizes = ['30', '32', '34', '36', '38', '40', '42', '44', '46', '48'];
+  bool get _isCouple => widget.product.isCouple;
 
   @override
   void initState() {
     super.initState();
-    if (_isCouple) {
-      _gender = 'femme';
-      _gender2 = 'homme';
+    final profiles = _mc.userMeasurements;
+    final primary = profiles.firstWhereOrNull((p) => p.isPrimary);
+    _selectedProfile = primary ?? (profiles.isNotEmpty ? profiles.first : null);
+  }
+
+  Future<void> _confirm() async {
+    if (_selectedProfile == null) return;
+    if (_isCouple && _selectedProfile2 == null) return;
+    setState(() => _isLoading = true);
+
+    _mc.selectedProfile.value = _selectedProfile;
+    _mc.selectedProfile2.value = _isCouple ? _selectedProfile2 : null;
+
+    final cartCtrl = CartController.instance;
+    await cartCtrl.addItem(widget.product);
+
+    if (!mounted) return;
+    Navigator.pop(context);
+
+    if (widget.action == 'order') {
+      Get.to(() => const CartCheckoutScreen());
     } else {
-      final cat = (widget.product.categoryType ?? '').toLowerCase();
-      if (cat.contains('homme')) _gender = 'homme';
+      OLoaders.successSnackBar(
+        title: 'Ajouté au panier',
+        message: '${widget.product.title} a été ajouté à votre panier.',
+      );
     }
   }
 
   @override
-  void dispose() {
-    _recipientCtrl.dispose();
-    super.dispose();
-  }
-
-  void _setupController() {
-    final c = Get.put(CustomizationController());
-
-    // Infos produit de base
-    c.productId.value = widget.product.id;
-    c.productName.value = widget.product.title;
-    c.productImage.value = widget.product.thumbnail;
-    c.basePrice.value = widget.product.price;
-    c.estimatedDays.value = widget.product.estimatedDays ?? 0;
-
-    final category = _isCouple
-        ? 'couple'
-        : (widget.product.categoryType ?? '').isNotEmpty
-            ? widget.product.categoryType!.toLowerCase()
-            : 'femme';
-
-    // loadForProduct() garantit que hasBroderie/hasFinition sont définis
-    // avant que fetchOptions() ne soit appelé (pas de problème de timing).
-    c.loadForProduct(
-      category: category,
-      fabricTypeStr: (widget.product.fabric ?? '').toLowerCase().trim(),
-      hasBroderieVal: widget.product.embroidery != null &&
-          widget.product.embroidery!.trim().isNotEmpty,
-      hasFinitionVal: widget.product.accessory != null &&
-          widget.product.accessory!.trim().isNotEmpty,
-      fabricOpts: widget.product.fabricOptions,
-      embroideryOpts: widget.product.embroideryOptions,
-      finishOpts: widget.product.finishOptions,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        child: Column(
+    final isDark = OHelperFunctions.isDarkMode(context);
+    final bg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      child: SingleChildScrollView(
+        child: Obx(() {
+          final profiles = _mc.userMeasurements;
+          if (_selectedProfile == null && profiles.isNotEmpty) {
+            _selectedProfile =
+                profiles.firstWhereOrNull((p) => p.isPrimary) ?? profiles.first;
+          }
+          final selfProfile =
+              profiles.firstWhereOrNull((p) => p.isPrimary) ??
+                  (profiles.isNotEmpty ? profiles.first : null);
+          // "Quelqu'un d'autre" ne doit jamais proposer le profil principal
+          // de l'utilisateur : on ne montre que les profils créés pour d'autres.
+          final otherProfiles =
+              profiles.where((p) => p.id != selfProfile?.id).toList();
+          final displayProfiles = _forSelf ? profiles : otherProfiles;
+          return Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8E4DE),
-                borderRadius: BorderRadius.circular(2),
+            Center(
+              child: Container(
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : const Color(0xFFE8E4DE),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            const SizedBox(height: 18),
-            const Text(
-              'Informations de taille',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
+            const SizedBox(height: 20),
+            Text(
+              'Pour qui commandez-vous ?',
+              style: TextStyle(
+                fontSize: 17, fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Choisissez comment vous souhaitez définir votre taille.',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500], height: 1.4),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4F1EC),
-                borderRadius: BorderRadius.circular(14),
+              'Sélectionnez le profil de mesure pour la confection.',
+              style: TextStyle(
+                fontSize: 12, height: 1.4,
+                color: isDark ? Colors.white54 : Colors.grey[500],
               ),
-              child: Row(children: [
-                _tabBtn('Sur Mesure', 0),
-                _tabBtn('Taille Standard', 1),
-              ]),
             ),
             const SizedBox(height: 18),
-            _tab == 0 ? _buildSurMesureTab() : _buildStandardTab(),
+
+            // ── Choix Pour moi / Quelqu'un d'autre ────────────────
+            Row(children: [
+              _choiceCard(
+                icon: Iconsax.user, label: 'Pour moi',
+                selected: _forSelf, isDark: isDark,
+                onTap: () => setState(() {
+                  _forSelf = true;
+                  final primary = profiles.firstWhereOrNull((p) => p.isPrimary);
+                  _selectedProfile = primary ?? (profiles.isNotEmpty ? profiles.first : null);
+                }),
+              ),
+              const SizedBox(width: 10),
+              _choiceCard(
+                icon: Iconsax.profile_2user, label: "Quelqu'un d'autre",
+                selected: !_forSelf, isDark: isDark,
+                onTap: () => setState(() {
+                  _forSelf = false;
+                  _selectedProfile =
+                      otherProfiles.isNotEmpty ? otherProfiles.first : null;
+                }),
+              ),
+            ]),
+            const SizedBox(height: 20),
+
+            // ── Liste des profils ──────────────────────────────────
+            if (displayProfiles.isEmpty)
+              _forSelf
+                  ? _buildEmptyState(isDark)
+                  : _buildEmptyOtherState(isDark)
+            else ...[
+              Text(
+                _forSelf ? 'MON PROFIL' : 'CHOISIR UN PROFIL',
+                style: const TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2, color: Color(0xFFB0AAA2),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...displayProfiles.map((p) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _profileTile(p, isDark),
+              )),
+            ],
+
+            // ── Créer nouveau profil (seulement "quelqu'un d'autre") ──
+            if (!_forSelf && displayProfiles.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              _createProfileBtn(isDark),
+            ],
+
+            // ── Article couple : second profil (partenaire) ────────
+            if (_isCouple && profiles.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Container(height: 1, color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFEEEBE6)),
+              const SizedBox(height: 20),
+              Text(
+                'couple_second_profile_title'.tr,
+                style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'couple_second_profile_sub'.tr,
+                style: TextStyle(
+                  fontSize: 11, height: 1.4,
+                  color: isDark ? Colors.white54 : Colors.grey[500],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'partner_2'.tr.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2, color: Color(0xFFB0AAA2),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...profiles.map((p) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _profileTile(p, isDark, slot: 2),
+              )),
+              const SizedBox(height: 4),
+              _createProfileBtn(isDark),
+            ],
+
+            const SizedBox(height: 20),
+
+            // ── Bouton confirmer ───────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: (_selectedProfile != null &&
+                        (!_isCouple || _selectedProfile2 != null) &&
+                        !_isLoading)
+                    ? _confirm
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: OColors.primary,
+                  disabledBackgroundColor: isDark ? Colors.white12 : const Color(0xFFD0CCC8),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : Text(
+                        widget.action == 'order' ? 'order_btn'.tr : 'add_to_cart'.tr,
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                      ),
+              ),
+            ),
           ],
-        ),
+          );
+        }),
       ),
     );
   }
 
-  Widget _tabBtn(String label, int index) {
-    final selected = _tab == index;
+  Widget _choiceCard({
+    required IconData icon, required String label,
+    required bool selected, required bool isDark, required VoidCallback onTap,
+  }) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _tab = index),
+        onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
           decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(11),
-            boxShadow: selected
-                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))]
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? const Color(0xFF1A1A1A) : Colors.grey[500],
-              ),
+            color: selected
+                ? OColors.primary.withValues(alpha: 0.08)
+                : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F6F3)),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected
+                  ? OColors.primary.withValues(alpha: 0.40)
+                  : (isDark ? Colors.white.withValues(alpha: 0.10) : const Color(0xFFEEEBE6)),
+              width: selected ? 1.5 : 1,
             ),
           ),
+          child: Row(children: [
+            Icon(icon, size: 15,
+                color: selected ? OColors.primary : (isDark ? Colors.white54 : Colors.grey)),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(label,
+                style: TextStyle(
+                  fontSize: 12, fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? OColors.primary : (isDark ? Colors.white70 : const Color(0xFF4A4542)),
+                ),
+              ),
+            ),
+            if (selected)
+              Container(
+                width: 16, height: 16,
+                decoration: const BoxDecoration(color: OColors.primary, shape: BoxShape.circle),
+                child: const Icon(Icons.check, color: Colors.white, size: 10),
+              ),
+          ]),
         ),
       ),
     );
   }
 
-  Widget _buildSurMesureTab() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: OColors.primary.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: OColors.primary.withValues(alpha: 0.15)),
+  Widget _profileTile(MeasurementProfileModel profile, bool isDark, {int slot = 1}) {
+    final current = slot == 2 ? _selectedProfile2 : _selectedProfile;
+    final isSelected = current?.id == profile.id ||
+        (current?.id == null && current?.profileName == profile.profileName);
+    return GestureDetector(
+      onTap: () => setState(() {
+        if (slot == 2) {
+          _selectedProfile2 = profile;
+        } else {
+          _selectedProfile = profile;
+        }
+      }),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? OColors.primary.withValues(alpha: 0.07)
+              : (isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8F6F3)),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? OColors.primary.withValues(alpha: 0.35)
+                : (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFEEEBE6)),
+            width: isSelected ? 1.5 : 1,
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: OColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Iconsax.magic_star, color: OColors.primary, size: 18),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Mesures personnalisées', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                    SizedBox(height: 2),
-                    Text('Parfaitement ajusté à votre morphologie', style: TextStyle(fontSize: 11, color: Color(0xFF888480))),
-                  ],
-                ),
-              ),
-              const Icon(Iconsax.tick_circle, color: OColors.primary, size: 18),
-            ],
+        ),
+        child: Row(children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? OColors.primary.withValues(alpha: 0.12)
+                  : (isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF0EDE8)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              profile.gender == 'homme' ? Iconsax.man : Iconsax.woman,
+              size: 18,
+              color: isSelected ? OColors.primary : (isDark ? Colors.white54 : const Color(0xFF888480)),
+            ),
           ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Flexible(
+                  child: Text(profile.profileName,
+                    style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                    ),
+                  ),
+                ),
+                if (profile.isPrimary) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: OColors.primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text('Principal',
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: OColors.primary),
+                    ),
+                  ),
+                ],
+              ]),
+              const SizedBox(height: 2),
+              Text(_profileSummary(profile),
+                style: TextStyle(fontSize: 11,
+                  color: isDark ? Colors.white38 : const Color(0xFFB0AAA2)),
+              ),
+            ]),
+          ),
+          if (isSelected)
+            Container(
+              width: 20, height: 20,
+              decoration: const BoxDecoration(color: OColors.primary, shape: BoxShape.circle),
+              child: const Icon(Icons.check, color: Colors.white, size: 12),
+            ),
+        ]),
+      ),
+    );
+  }
+
+  String _profileSummary(MeasurementProfileModel p) {
+    final parts = <String>[];
+    if (p.chest != null) parts.add('P: ${p.chest!.toStringAsFixed(0)}cm');
+    if (p.waist != null) parts.add('T: ${p.waist!.toStringAsFixed(0)}cm');
+    if (p.hips != null) parts.add('H: ${p.hips!.toStringAsFixed(0)}cm');
+    return parts.isEmpty ? (p.gender == 'homme' ? 'Homme' : 'Femme') : parts.join(' · ');
+  }
+
+  Widget _createProfileBtn(bool isDark) {
+    return GestureDetector(
+      onTap: () async {
+        Navigator.pop(context);
+        await Get.to(() => const ManualMeasurementEntryScreen());
+        await _mc.fetchUserMeasurements();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: OColors.primary.withValues(alpha: 0.25), width: 1.5),
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: OColors.primary.withValues(alpha: 0.10), shape: BoxShape.circle,
+            ),
+            child: const Icon(Iconsax.add, size: 12, color: OColors.primary),
+          ),
+          const SizedBox(width: 8),
+          const Text('Créer un nouveau profil',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: OColors.primary),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildEmptyOtherState(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8F6F3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFEEEBE6),
+        ),
+      ),
+      child: Column(children: [
+        Icon(Iconsax.profile_2user, size: 32, color: isDark ? Colors.white38 : Colors.grey[400]),
+        const SizedBox(height: 10),
+        Text("Aucun profil pour quelqu'un d'autre",
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : const Color(0xFF1A1A1A)),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Créez un profil de mesure pour la personne destinataire de la commande.',
+          style: TextStyle(fontSize: 12, height: 1.4,
+            color: isDark ? Colors.white54 : Colors.grey[500]),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _setupController();
-              final c = CustomizationController.instance;
-              c.standardTopSize.value = '';
-              c.standardBottomSize.value = '';
-              c.sizeRecipientName.value = '';
-              c.standardTopSize2.value = '';
-              c.standardBottomSize2.value = '';
-              Get.to(() => CustomModelStep1(categoryType: c.categoryType.value));
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: OColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            child: const Text('Continuer', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-          ),
+          child: _createProfileBtn(isDark),
         ),
-      ],
+      ]),
     );
   }
 
-  Widget _buildStandardTab() {
-    final couple = _isCouple;
-    final canConfirm = _topSize != null && _bottomSize != null &&
-        (!couple || (_topSize2 != null && _bottomSize2 != null));
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── Partner 1 ──────────────────────────────────────────
-        if (couple) _partnerLabel('Partenaire 1', '1'),
-        if (couple) const SizedBox(height: 14),
-
-        const Text('GENRE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: Color(0xFFB0AAA2))),
-        const SizedBox(height: 8),
-        _genderRow(_gender, (v) => setState(() { _gender = v; _topSize = null; _bottomSize = null; })),
-        const SizedBox(height: 14),
-
-        const Text('TAILLE HAUT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: Color(0xFFB0AAA2))),
-        const SizedBox(height: 10),
-        _sizeGrid(sizes: _topSizes, selected: _topSize, onTap: (v) => setState(() => _topSize = v)),
-        const SizedBox(height: 14),
-
-        const Text('TAILLE BAS — PANTALON', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: Color(0xFFB0AAA2))),
-        const SizedBox(height: 10),
-        _sizeGrid(sizes: _bottomSizes, selected: _bottomSize, onTap: (v) => setState(() => _bottomSize = v)),
-
-        // ── "Pour qui?" — single only ───────────────────────────
-        if (!couple) ...[
-          const SizedBox(height: 14),
-          const Text('POUR QUI ? (FACULTATIF)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: Color(0xFFB0AAA2))),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F6F3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFEEEBE6)),
-            ),
-            child: TextField(
-              controller: _recipientCtrl,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF1A1A1A)),
-              decoration: const InputDecoration(
-                hintText: 'Ex: pour ma mère, pour un ami...',
-                hintStyle: TextStyle(fontSize: 12, color: Color(0xFFD0CCC8)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-        ],
-
-        // ── Partner 2 ──────────────────────────────────────────
-        if (couple) ...[
-          const SizedBox(height: 22),
-          Container(height: 1, color: const Color(0xFFEEEBE6)),
-          const SizedBox(height: 22),
-
-          _partnerLabel('Partenaire 2', '2'),
-          const SizedBox(height: 14),
-
-          const Text('GENRE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: Color(0xFFB0AAA2))),
-          const SizedBox(height: 8),
-          _genderRow(_gender2, (v) => setState(() { _gender2 = v; _topSize2 = null; _bottomSize2 = null; })),
-          const SizedBox(height: 14),
-
-          const Text('TAILLE HAUT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: Color(0xFFB0AAA2))),
-          const SizedBox(height: 10),
-          _sizeGrid(sizes: _topSizes, selected: _topSize2, onTap: (v) => setState(() => _topSize2 = v)),
-          const SizedBox(height: 14),
-
-          const Text('TAILLE BAS — PANTALON', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: Color(0xFFB0AAA2))),
-          const SizedBox(height: 10),
-          _sizeGrid(sizes: _bottomSizes, selected: _bottomSize2, onTap: (v) => setState(() => _bottomSize2 = v)),
-        ],
-
-        const SizedBox(height: 24),
-
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: canConfirm
-                ? () {
-                    Navigator.pop(context);
-                    _setupController();
-                    final c = CustomizationController.instance;
-                    c.standardTopSize.value = _topSize!;
-                    c.standardBottomSize.value = _bottomSize!;
-                    c.sizeRecipientName.value = couple ? '' : _recipientCtrl.text.trim();
-                    if (couple) {
-                      c.standardTopSize2.value = _topSize2!;
-                      c.standardBottomSize2.value = _bottomSize2!;
-                      c.sizeGender2.value = _gender2;
-                    } else {
-                      c.standardTopSize2.value = '';
-                      c.standardBottomSize2.value = '';
-                    }
-                    Get.to(() => CustomModelStep1(categoryType: c.categoryType.value));
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: OColors.primary,
-              disabledBackgroundColor: const Color(0xFFD0CCC8),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            child: const Text('Commander', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _partnerLabel(String label, String number) {
-    return Row(
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(color: OColors.primary, shape: BoxShape.circle),
-          child: Center(
-            child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A))),
-      ],
-    );
-  }
-
-  Widget _genderRow(String current, ValueChanged<String> onChange) {
-    return Row(children: [
-      _genderChip('Femme', 'femme', Iconsax.woman, current, onChange),
-      const SizedBox(width: 10),
-      _genderChip('Homme', 'homme', Iconsax.man, current, onChange),
-    ]);
-  }
-
-  Widget _genderChip(String label, String value, IconData icon, String current, ValueChanged<String> onChange) {
-    final selected = current == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => onChange(value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 11),
-          decoration: BoxDecoration(
-            color: selected ? OColors.primary.withValues(alpha: 0.08) : const Color(0xFFF8F6F3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected ? OColors.primary.withValues(alpha: 0.3) : const Color(0xFFEEEBE6),
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 14, color: selected ? OColors.primary : Colors.grey),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? OColors.primary : const Color(0xFF4A4542),
-                ),
-              ),
-            ],
-          ),
+  Widget _buildEmptyState(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8F6F3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFEEEBE6),
         ),
       ),
-    );
-  }
-
-  Widget _sizeGrid({
-    required List<String> sizes,
-    required String? selected,
-    required ValueChanged<String> onTap,
-  }) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: sizes.map((s) {
-        final isSelected = s == selected;
-        return GestureDetector(
-          onTap: () => onTap(s),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? OColors.primary.withValues(alpha: 0.10)
-                  : const Color(0xFFF4F1EC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected
-                    ? OColors.primary.withValues(alpha: 0.55)
-                    : const Color(0xFFE4E0DA),
-                width: isSelected ? 1.5 : 1,
-              ),
-            ),
-            child: Text(
-              s,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight:
-                    isSelected ? FontWeight.w800 : FontWeight.w500,
-                color: isSelected
-                    ? OColors.primary
-                    : const Color(0xFF6B6560),
-                letterSpacing: 0.2,
-              ),
+      child: Column(children: [
+        Icon(Iconsax.ruler, size: 32, color: isDark ? Colors.white38 : Colors.grey[400]),
+        const SizedBox(height: 10),
+        Text('Aucun profil de mesure',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : const Color(0xFF1A1A1A)),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Créez un profil pour que le tailleur confectionne votre tenue sur mesure.',
+          style: TextStyle(fontSize: 12, height: 1.4,
+            color: isDark ? Colors.white54 : Colors.grey[500]),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              await Get.to(() => const ManualMeasurementEntryScreen());
+              await _mc.fetchUserMeasurements();
+            },
+            icon: const Icon(Iconsax.ruler, size: 15),
+            label: const Text('Créer mon profil'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: OColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
-        );
-      }).toList(),
+        ),
+      ]),
     );
   }
 }
 
 class _CraftDetail {
-  const _CraftDetail({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
+  const _CraftDetail({required this.icon, required this.label, required this.value});
   final IconData icon;
   final String label;
   final String value;

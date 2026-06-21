@@ -6,7 +6,6 @@ import 'package:osho/features/authentication/screens/onboarding/widgets/onboardi
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/image_strings.dart';
 import 'package:osho/utils/constants/sizes.dart';
-import 'package:osho/utils/constants/text_strings.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
 import '../../controllers/onboarding/onboarding_controller.dart';
 
@@ -23,20 +22,20 @@ class OnBoardingScreen extends StatelessWidget {
           PageView(
             controller: controller.pageController,
             onPageChanged: controller.updatePageIndicator,
-            children: const [
+            children: [
               OnBoardingPage(
                 image: OImages.onBoardingImage1,
                 rectangleImage: OImages.onBoardingRectangle,
-                title: OText.onBoardingTitle1,
-                subTitle: OText.onBoardingSubTitle1,
+                title: 'auth_onboarding_title1'.tr,
+                subTitle: 'auth_onboarding_sub1'.tr,
               ),
               OnBoardingPage(
                 image: OImages.onBoardingImage2,
                 rectangleImage: OImages.onBoardingRectangle,
-                title: OText.onBoardingTitle2,
-                subTitle: OText.onBoardingSubTitle2,
-                subTitle2: OText.onBoardingSubTitle21,
-                subTitle3: OText.onBoardingSubTitle22,
+                title: 'auth_onboarding_title2'.tr,
+                subTitle: 'auth_onboarding_sub2'.tr,
+                subTitle2: 'auth_onboarding_sub21'.tr,
+                subTitle3: 'auth_onboarding_sub22'.tr,
               ),
             ],
           ),
@@ -83,8 +82,8 @@ class OnBoardingElevatedButton extends StatelessWidget {
               children: [
                 Text(
                   controller.currentPageIndex.value == 0
-                      ? 'Suivant'
-                      : 'Demarrer',
+                      ? 'next'.tr
+                      : 'start_btn'.tr,
                 ),
                 const SizedBox(width: OSizes.md),
                 controller.currentPageIndex.value == 0

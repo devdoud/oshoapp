@@ -13,6 +13,7 @@ import 'package:osho/features/shop/controllers/customization_controller.dart';
 import 'package:osho/features/shop/models/order_model.dart';
 import 'package:osho/features/shop/screens/checkout/success_screen.dart';
 import 'package:osho/utils/helpers/logistics_calculator.dart';
+import 'package:osho/utils/helpers/tax_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CheckoutController extends GetxController {
@@ -26,6 +27,9 @@ class CheckoutController extends GetxController {
 
   final fullNameController = TextEditingController();
   final phoneController = TextEditingController();
+  final orderNoteController = TextEditingController();
+  // Région : état US (ex: 'CA') ou province Canada (ex: 'QC')
+  final regionController = TextEditingController();
 
   final isLoading = false.obs;
   final _orderRepository = Get.put(OrderRepository());
@@ -48,12 +52,42 @@ class CheckoutController extends GetxController {
 
   double get shippingFee => customLogisticsRate.fee;
 
+  // ── Taxes ─────────────────────────────────────────────────────────────────
+
+  /// Tax configuration derived from the current country field.
+  TaxConfig get currentTaxConfig {
+    final country = countryController.text;
+    final region = regionController.text.trim();
+    return region.isNotEmpty
+        ? TaxService.forRegion(country, region)
+        : TaxService.forCountry(country);
+  }
+
+  /// Tax amount applied on the custom order product price (excl. shipping).
+  double get taxAmount {
+    final config = currentTaxConfig;
+    if (!config.applies) return 0;
+    return config.compute(CustomizationController.instance.basePrice.value);
+  }
+
+  /// Tax amount applied on the cart subtotal (excl. shipping).
+  double get cartTaxAmount {
+    final config = currentTaxConfig;
+    if (!config.applies) return 0;
+    return config.compute(CartController.instance.subtotal);
+  }
+
+  // ── Totals ────────────────────────────────────────────────────────────────
+
   double get customTotalAmount =>
       CustomizationController.instance.basePrice.value +
-      customLogisticsRate.fee;
+      customLogisticsRate.fee +
+      taxAmount;
 
   double get cartTotalAmount =>
-      CartController.instance.subtotal + cartLogisticsRate.fee;
+      CartController.instance.subtotal +
+      cartLogisticsRate.fee +
+      cartTaxAmount;
 
   @override
   void onInit() {
@@ -92,6 +126,8 @@ class CheckoutController extends GetxController {
     countryController.dispose();
     fullNameController.dispose();
     phoneController.dispose();
+    orderNoteController.dispose();
+    regionController.dispose();
     super.onClose();
   }
 
@@ -118,6 +154,8 @@ class CheckoutController extends GetxController {
     if (address.country != null &&
         (overwrite || countryController.text.trim().isEmpty)) {
       countryController.text = address.country!;
+      // Réinitialiser la région quand le pays change
+      if (overwrite) regionController.clear();
     }
   }
 
@@ -161,6 +199,8 @@ class CheckoutController extends GetxController {
 
   Map<String, dynamic> _buildShippingAddress(
       {required LogisticsRate logisticsRate}) {
+    final country = countryController.text.trim();
+    final taxConfig = TaxService.forCountry(country);
     return {
       'fullName': fullNameController.text.trim(),
       'phone': phoneController.text.trim(),
@@ -170,9 +210,11 @@ class CheckoutController extends GetxController {
       'postal_code': postalCodeController.text.trim().isEmpty
           ? null
           : postalCodeController.text.trim(),
-      'country': countryController.text.trim().isEmpty
+      'country': country.isEmpty ? null : country,
+      'country_iso2': taxConfig.iso2.isNotEmpty ? taxConfig.iso2 : null,
+      'region': regionController.text.trim().isEmpty
           ? null
-          : countryController.text.trim(),
+          : regionController.text.trim().toUpperCase(),
       'logistics_zone': logisticsRate.zone,
       'logistics_fee': logisticsRate.fee,
       'logistics_weight': logisticsRate.weightLabel,
@@ -202,8 +244,11 @@ class CheckoutController extends GetxController {
       measurementProfileId: profileId,
       customizationDetails: {
         'tissu': customController.fabricName,
+        'tissu_image': customController.fabricImageUrl,
         'etape2': customController.getStep2Name(),
+        'etape2_image': customController.getStep2ImageUrl(),
         'etape3': customController.getStep3Name(),
+        'etape3_image': customController.getStep3ImageUrl(),
         'category': customController.categoryType.value,
         if (isCouple && profileId2 != null)
           'measurement_profile_id_2': profileId2,
@@ -220,18 +265,29 @@ class CheckoutController extends GetxController {
     final measurementController = MeasurementController.instance;
     final profileId = measurementController.selectedProfile.value?.id;
     final profileSnapshot = measurementController.selectedProfile.value?.toJson();
+    final profileId2 = measurementController.selectedProfile2.value?.id;
+    final profileSnapshot2 = measurementController.selectedProfile2.value?.toJson();
 
-    return CartController.instance.items
-        .map((item) => OrderItemModel(
-              productId: item.productId,
-              quantity: item.quantity,
-              price: item.price,
-              measurementProfileId: profileId,
-              measurementSnapshot: profileSnapshot,
-              customizationDetails:
-                  item.customizationDetails ?? {'type': 'cart'},
-            ))
-        .toList();
+    return CartController.instance.items.map((item) {
+      final isCouple = item.customizationDetails?['is_couple'] as bool? ??
+          (item.customizationDetails?['genre'] as String? ?? '')
+              .toLowerCase()
+              .contains('couple');
+      final details = Map<String, dynamic>.from(
+          item.customizationDetails ?? {'type': 'cart'});
+      if (isCouple && profileId2 != null) {
+        details['measurement_profile_id_2'] = profileId2;
+        details['measurement_snapshot_2'] = profileSnapshot2;
+      }
+      return OrderItemModel(
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+        measurementProfileId: profileId,
+        measurementSnapshot: profileSnapshot,
+        customizationDetails: details,
+      );
+    }).toList();
   }
 
   Map<String, dynamic> _toCheckoutItemPayload(OrderItemModel item) {
@@ -263,19 +319,19 @@ class CheckoutController extends GetxController {
       throw 'Aucun article a payer.';
     }
 
-    final itemTotal = items.fold<double>(
-      0,
-      (sum, item) => sum + (item.price * item.quantity),
-    );
-    final shippingFee = (totalAmount - itemTotal).clamp(0, double.infinity);
+    // Use the actual logistics fee — NOT derived from totalAmount,
+    // which now includes taxes and would produce a wrong shipping value.
     final logisticsRate = isCart ? cartLogisticsRate : customLogisticsRate;
+    final shippingFee = logisticsRate.fee;
 
+    final note = orderNoteController.text.trim();
     return {
       'shipping_address': _buildShippingAddress(logisticsRate: logisticsRate),
       'shipping_fee': shippingFee,
       'payment_method': 'card',
       'source': isCart ? 'cart' : 'custom',
       'items': items.map(_toCheckoutItemPayload).toList(),
+      if (note.isNotEmpty) 'customer_note': note,
     };
   }
 
@@ -315,6 +371,14 @@ class CheckoutController extends GetxController {
 
       Get.offAll(() => OrderSuccessScreen(order: savedOrder));
       return savedOrder;
+    } on FunctionException catch (e) {
+      // supabase_flutter 2.x throws FunctionException for HTTP >= 400
+      debugPrint('[CONFIRM ORDER FUNCTION ERROR] Status: ${e.status}, Details: ${e.details}');
+      final details = e.details;
+      final msg = details is Map
+          ? details['error']?.toString()
+          : details?.toString();
+      throw msg ?? 'Erreur de confirmation (${e.status}). Veuillez réessayer.';
     } catch (e) {
       debugPrint('[CHECKOUT] Confirmation Stripe echouee: $e');
       rethrow;

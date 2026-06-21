@@ -5,11 +5,18 @@ import 'package:iconsax/iconsax.dart';
 import 'package:osho/features/personalization/controllers/address_controller.dart';
 import 'package:osho/features/personalization/controllers/user_controller.dart';
 import 'package:osho/features/personalization/models/address_model.dart';
+import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
+import 'package:osho/utils/helpers/tax_service.dart';
 import 'package:osho/utils/validators/validation.dart';
 
 class AddNewAddressScreen extends StatefulWidget {
-  const AddNewAddressScreen({super.key});
+  const AddNewAddressScreen({super.key, this.existing});
+
+  /// Si non null, l'écran est en mode édition (pré-rempli).
+  final AddressModel? existing;
+
+  bool get isEditing => existing != null;
 
   @override
   State<AddNewAddressScreen> createState() => _AddNewAddressScreenState();
@@ -31,11 +38,24 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
   @override
   void initState() {
     super.initState();
-    _makeDefault = _addrCtrl.addresses.isEmpty;
-    if (Get.isRegistered<UserController>()) {
-      final user = UserController.instance.user.value;
-      _fullNameCtrl.text = user.fullName;
-      _phoneCtrl.text = user.phone;
+    final ex = widget.existing;
+    if (ex != null) {
+      // Mode édition — pré-remplir tous les champs
+      _fullNameCtrl.text = ex.fullName;
+      _phoneCtrl.text = ex.phone;
+      _addressCtrl.text = ex.address;
+      _cityCtrl.text = ex.city;
+      _quartierCtrl.text = ex.quartier;
+      _postalCtrl.text = ex.postalCode ?? '';
+      _countryCtrl.text = ex.country ?? '';
+      _makeDefault = ex.isDefault;
+    } else {
+      _makeDefault = _addrCtrl.addresses.isEmpty;
+      if (Get.isRegistered<UserController>()) {
+        final user = UserController.instance.user.value;
+        _fullNameCtrl.text = user.fullName;
+        _phoneCtrl.text = user.phone;
+      }
     }
   }
 
@@ -54,19 +74,35 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final address = AddressModel(
-      userId: '',
-      fullName: _fullNameCtrl.text.trim(),
-      phone: _phoneCtrl.text.trim(),
-      address: _addressCtrl.text.trim(),
-      city: _cityCtrl.text.trim(),
-      quartier: _quartierCtrl.text.trim(),
-      postalCode: _postalCtrl.text.trim().isEmpty ? null : _postalCtrl.text.trim(),
-      country: _countryCtrl.text.trim().isEmpty ? null : _countryCtrl.text.trim(),
-      isDefault: _makeDefault,
-    );
+    bool ok;
+    if (widget.isEditing) {
+      final updated = widget.existing!.copyWith(
+        fullName: _fullNameCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
+        address: _addressCtrl.text.trim(),
+        city: _cityCtrl.text.trim(),
+        quartier: _quartierCtrl.text.trim(),
+        postalCode: _postalCtrl.text.trim().isEmpty ? null : _postalCtrl.text.trim(),
+        country: _countryCtrl.text.trim().isEmpty ? null : _countryCtrl.text.trim(),
+        isDefault: _makeDefault,
+      );
+      ok = await _addrCtrl.updateAddress(updated);
+      if (ok && _makeDefault) await _addrCtrl.setDefaultAddress(updated, showMessage: false);
+    } else {
+      final address = AddressModel(
+        userId: '',
+        fullName: _fullNameCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
+        address: _addressCtrl.text.trim(),
+        city: _cityCtrl.text.trim(),
+        quartier: _quartierCtrl.text.trim(),
+        postalCode: _postalCtrl.text.trim().isEmpty ? null : _postalCtrl.text.trim(),
+        country: _countryCtrl.text.trim().isEmpty ? null : _countryCtrl.text.trim(),
+        isDefault: _makeDefault,
+      );
+      ok = await _addrCtrl.addAddress(address, setDefault: _makeDefault);
+    }
 
-    final ok = await _addrCtrl.addAddress(address, setDefault: _makeDefault);
     if (ok && mounted) Get.back();
   }
 
@@ -99,7 +135,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // ── Contact ──────────────────────────────────
-                      _sectionLabel('CONTACT', isDark),
+                      _sectionLabel('contact'.tr, isDark),
                       const SizedBox(height: 10),
                       _field(
                         controller: _fullNameCtrl,
@@ -112,7 +148,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                       const SizedBox(height: 10),
                       _field(
                         controller: _phoneCtrl,
-                        label: 'Téléphone',
+                        label: 'phone_number'.tr,
                         icon: Iconsax.mobile,
                         isDark: isDark,
                         keyboardType: TextInputType.phone,
@@ -123,11 +159,11 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                       const SizedBox(height: 22),
 
                       // ── Adresse ──────────────────────────────────
-                      _sectionLabel('ADRESSE', isDark),
+                      _sectionLabel('address_section'.tr, isDark),
                       const SizedBox(height: 10),
                       _field(
                         controller: _addressCtrl,
-                        label: 'Adresse précise',
+                        label: 'precise_address'.tr,
                         icon: Iconsax.location,
                         isDark: isDark,
                         validator: (v) =>
@@ -150,7 +186,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                           Expanded(
                             child: _field(
                               controller: _quartierCtrl,
-                              label: 'Quartier',
+                              label: 'district'.tr,
                               icon: Iconsax.map,
                               isDark: isDark,
                               validator: (v) =>
@@ -173,12 +209,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _field(
-                              controller: _countryCtrl,
-                              label: 'Pays',
-                              icon: Iconsax.global,
-                              isDark: isDark,
-                            ),
+                            child: _countryPicker(isDark),
                           ),
                         ],
                       ),
@@ -218,7 +249,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  'Définir comme adresse principale',
+                                  'set_as_default'.tr,
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -302,7 +333,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                                       ),
                                     )
                                   : Text(
-                                      'Enregistrer',
+                                      'save_address'.tr,
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
@@ -360,7 +391,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Nouvelle adresse',
+                widget.isEditing ? 'Modifier l\'adresse' : 'add_new_address'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -387,6 +418,193 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
           fontWeight: FontWeight.w700,
           letterSpacing: 1.4,
           color: isDark ? Colors.white38 : const Color(0xFFB0AAA2),
+        ),
+      ),
+    );
+  }
+
+  // ── Country picker ────────────────────────────────────────────────────────────
+
+  Widget _countryPicker(bool isDark) {
+    final fill = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final border = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : const Color(0xFFEEEBE6);
+    final selected = _countryCtrl.text.isNotEmpty;
+    final iso2 = TaxService.forCountry(_countryCtrl.text).iso2;
+    final flag = iso2.isNotEmpty ? TaxService.flagEmoji(iso2) : '';
+
+    return GestureDetector(
+      onTap: () => _showCountrySearch(isDark),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: border),
+        ),
+        child: Row(
+          children: [
+            if (selected && flag.isNotEmpty)
+              Text(flag, style: const TextStyle(fontSize: 18))
+            else
+              Icon(Iconsax.global, size: 16,
+                  color: isDark ? Colors.white38 : const Color(0xFFB0AAA2)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                selected ? _countryCtrl.text : 'country_label'.tr,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+                  color: selected
+                      ? (isDark ? Colors.white : const Color(0xFF1A1A1A))
+                      : (isDark ? Colors.white38 : const Color(0xFF888480)),
+                ),
+              ),
+            ),
+            Icon(Iconsax.arrow_down_1, size: 14,
+                color: isDark ? Colors.white38 : const Color(0xFFB0AAA2)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCountrySearch(bool isDark) {
+    final countries = TaxService.supportedCountries;
+    final searchCtrl = TextEditingController();
+    var filtered = countries;
+
+    final bg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1A1A);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          height: MediaQuery.of(ctx).size.height * 0.80,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 8),
+                child: Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : const Color(0xFFE0DDD9),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Text('Choisir un pays',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800,
+                      color: textColor),
+                ),
+              ),
+              // Search field
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.07)
+                        : const Color(0xFFF4F1EC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: searchCtrl,
+                    autofocus: true,
+                    style: TextStyle(fontSize: 13, color: textColor),
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher un pays...',
+                      hintStyle: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white38 : const Color(0xFFB0AAA2)),
+                      prefixIcon: Icon(Iconsax.search_normal,
+                          size: 16,
+                          color: isDark ? Colors.white38 : const Color(0xFFB0AAA2)),
+                      border: InputBorder.none,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                    onChanged: (q) {
+                      setModalState(() {
+                        filtered = q.isEmpty
+                            ? countries
+                            : countries
+                                .where((c) =>
+                                    c.name.toLowerCase().contains(q.toLowerCase()) ||
+                                    c.iso2.toLowerCase() == q.toLowerCase())
+                                .toList();
+                      });
+                    },
+                  ),
+                ),
+              ),
+              // List
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) {
+                    final c = filtered[i];
+                    final isSelected = _countryCtrl.text == c.name;
+                    final flag = TaxService.flagEmoji(c.iso2);
+                    return ListTile(
+                      dense: true,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                      leading: Container(
+                        width: 44, height: 44,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? OColors.primary.withValues(alpha: 0.10)
+                              : (isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : const Color(0xFFF4F1EC)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(flag,
+                            style: const TextStyle(fontSize: 22),
+                          ),
+                        ),
+                      ),
+                      title: Text(c.name,
+                        style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w600,
+                          color: isSelected ? OColors.primary : textColor,
+                        ),
+                      ),
+                      subtitle: Text(c.iso2,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white38 : const Color(0xFFB0AAA2),
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_circle_rounded,
+                              color: OColors.primary, size: 18)
+                          : null,
+                      onTap: () {
+                        setState(() => _countryCtrl.text = c.name);
+                        Navigator.pop(ctx);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

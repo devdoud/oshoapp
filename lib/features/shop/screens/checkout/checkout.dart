@@ -16,6 +16,7 @@ import 'package:osho/features/shop/controllers/customization_controller.dart';
 import 'package:osho/features/shop/controllers/checkout_controller.dart';
 import 'package:osho/utils/helpers/helper_functions.dart';
 import 'package:osho/utils/helpers/logistics_calculator.dart';
+import 'package:osho/utils/helpers/tax_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -54,7 +55,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final measurementController = Get.put(MeasurementController());
     final logisticsRate = checkoutController.currentLogisticsRate;
     final shippingFee = logisticsRate.fee;
-    final totalAmount = controller.basePrice.value + shippingFee;
+    final taxConfig = checkoutController.currentTaxConfig;
+    final taxAmount = checkoutController.taxAmount;
+    final totalAmount =
+        controller.basePrice.value + shippingFee + taxAmount;
 
     final bg = isDark ? const Color(0xFF111111) : const Color(0xFFF7F4F0);
 
@@ -94,7 +98,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
         title: Text(
-          'Récapitulatif',
+          'checkout_title'.tr,
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 17,
@@ -110,9 +114,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               color: OColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Text(
-              'Étape 1/2',
-              style: TextStyle(
+            child: Text(
+              'checkout_step'.tr,
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: OColors.primary,
@@ -129,7 +133,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Livraison ───────────────────────────────────────────────
-              _sectionLabel('Livraison'),
+              _sectionLabel('delivery'.tr),
               _buildSavedAddressSection(
                   context, addressController, checkoutController, isDark),
               const SizedBox(height: 10),
@@ -140,7 +144,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(height: 28),
 
               // ── Taille & Mesures ────────────────────────────────────────
-              _sectionLabel('Taille & Mesures'),
+              _sectionLabel('size_and_measures'.tr),
               Obx(() {
                 if (controller.standardTopSize.value.isNotEmpty) {
                   return _buildStandardSizeCard(context, controller, isDark);
@@ -162,15 +166,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(height: 28),
 
               // ── Ma Commande ─────────────────────────────────────────────
-              _sectionLabel('Ma Commande'),
+              _sectionLabel('my_order'.tr),
               _buildOrderItem(context, controller, isDark),
 
               const SizedBox(height: 28),
 
               // ── Récapitulatif financier ──────────────────────────────────
-              _sectionLabel('Récapitulatif'),
+              _sectionLabel('billing_summary'.tr),
               _buildBillingCard(
-                  controller, logisticsRate, shippingFee, totalAmount, isDark),
+                controller,
+                logisticsRate,
+                shippingFee,
+                taxConfig,
+                taxAmount,
+                totalAmount,
+                isDark,
+              ),
               const SizedBox(height: 20),
               Center(
                 child: Row(
@@ -179,9 +190,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     const Icon(Iconsax.shield_tick,
                         size: 13, color: Color(0xFFD0CCC8)),
                     const SizedBox(width: 6),
-                    const Text(
-                      'Paiement sécurisé · Confection artisanale',
-                      style: TextStyle(
+                    Text(
+                      'artisanal_craft'.tr,
+                      style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFFD0CCC8),
                         fontWeight: FontWeight.w500,
@@ -290,7 +301,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Total à payer',
+                'total_to_pay'.tr,
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 13,
@@ -298,7 +309,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
               Text(
-                OLogisticsCalculator.formatFee(totalAmount),
+                OLogisticsCalculator.formatFeeLocalized(totalAmount),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -326,20 +337,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     )
                   ],
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Passer au paiement',
-                      style: TextStyle(
+                      'proceed_to_payment'.tr,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.2,
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Icon(Iconsax.arrow_right_3, color: Colors.white, size: 16),
+                    const SizedBox(width: 8),
+                    const Icon(Iconsax.arrow_right_3, color: Colors.white, size: 16),
                   ],
                 ),
               ),
@@ -452,9 +463,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   color: OColors.primary.withValues(alpha: 0.07),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'Changer',
-                  style: TextStyle(
+                child: Text(
+                  'change_address_btn'.tr,
+                  style: const TextStyle(
                     color: OColors.primary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -493,11 +504,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: Icon(Iconsax.location, color: Colors.grey[400], size: 18),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Aucune adresse enregistrée',
+              'no_saved_address'.tr,
               style:
-                  TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
           ),
           GestureDetector(
@@ -518,9 +529,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 color: OColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text(
-                'Ajouter',
-                style: TextStyle(
+              child: Text(
+                'add_address_btn'.tr,
+                style: const TextStyle(
                   color: OColors.primary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -572,7 +583,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 VerticalDivider(width: 1, color: dividerColor),
                 Expanded(
-                  child: _buildFormField('Quartier', Iconsax.location,
+                  child: _buildFormField('district'.tr, Iconsax.location,
                       checkoutController.stateController, isDark,
                       rounded: false),
                 ),
@@ -583,7 +594,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           _buildFormField('address'.tr, Iconsax.home,
               checkoutController.addressController, isDark),
           Divider(height: 1, color: dividerColor, indent: 54),
-          _buildFormField('Pays', Iconsax.global,
+          _buildFormField('country_label'.tr, Iconsax.global,
               checkoutController.countryController, isDark,
               isLast: true),
         ],
@@ -674,10 +685,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     color: OColors.primary, size: 18),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  "Aucune mesure enregistrée. Prenez vos mesures avec notre tailleur numérique pour un ajustement parfait.",
-                  style: TextStyle(
+                  'no_measurement_text'.tr,
+                  style: const TextStyle(
                       fontSize: 13,
                       height: 1.5,
                       color: Color(0xFF6B6560)),
@@ -705,8 +716,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 elevation: 0,
               ),
               icon: const Icon(Iconsax.scan, size: 17),
-              label: const Text('Prendre mes mesures (IA)',
-                  style: TextStyle(
+              label: Text('take_measurements'.tr,
+                  style: const TextStyle(
                       fontWeight: FontWeight.w600, fontSize: 14)),
             ),
           ),
@@ -715,9 +726,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             width: double.infinity,
             child: TextButton(
               onPressed: () => _showMeasurementPrompt(context),
-              child: const Text(
-                'Choisir une taille standard',
-                style: TextStyle(
+              child: Text(
+                'choose_standard_size'.tr,
+                style: const TextStyle(
                   color: Color(0xFF888480),
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
@@ -778,15 +789,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   children: [
                     Text(
                       isCouple
-                          ? 'Commande couple'
-                          : 'Taille standard',
+                          ? 'couple_order'.tr
+                          : 'standard_size_label'.tr,
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                     Text(
                       isCouple
-                          ? 'Deux partenaires'
-                          : 'Taille prête-à-porter',
+                          ? 'two_partners'.tr
+                          : 'ready_to_wear'.tr,
                       style: const TextStyle(
                           fontSize: 11, color: Color(0xFFB0AAA2)),
                     ),
@@ -809,9 +820,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: const Color(0xFFE4E0DA)),
                   ),
-                  child: const Text(
-                    'Modifier',
-                    style: TextStyle(
+                  child: Text(
+                    'edit'.tr,
+                    style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFF6B6560),
                       fontWeight: FontWeight.w600,
@@ -963,13 +974,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isCouple ? 'Sur Mesure — Couple' : 'Sur Mesure',
+                    isCouple ? 'Sur Mesure — Couple' : 'sur_mesure'.tr,
                     style: const TextStyle(
                         fontWeight: FontWeight.w700, fontSize: 14),
                   ),
-                  const Text(
-                    'Ajustement artisanal',
-                    style: TextStyle(
+                  Text(
+                    'artisanal'.tr,
+                    style: const TextStyle(
                         fontSize: 11, color: Color(0xFFB0AAA2)),
                   ),
                 ],
@@ -978,7 +989,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
           const SizedBox(height: 16),
           if (isCouple) ...[
-            _buildProfileLabel('Partenaire 1', isDark),
+            _buildProfileLabel('partner_1'.tr, isDark),
             const SizedBox(height: 6),
           ],
           _buildProfileDropdown(
@@ -990,7 +1001,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
           if (isCouple) ...[
             const SizedBox(height: 14),
-            _buildProfileLabel('Partenaire 2', isDark),
+            _buildProfileLabel('partner_2'.tr, isDark),
             const SizedBox(height: 6),
             _buildProfileDropdown(
               context,
@@ -1305,7 +1316,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Prix unitaire',
+                            'unit_price'.tr,
                             style: TextStyle(
                               fontSize: 13,
                               color: isDark
@@ -1314,7 +1325,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             ),
                           ),
                           Text(
-                            OLogisticsCalculator.formatFee(controller.basePrice.value),
+                            OLogisticsCalculator.formatFeeLocalized(controller.basePrice.value),
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               color: OColors.primary,
@@ -1370,6 +1381,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     CustomizationController controller,
     LogisticsRate logisticsRate,
     double shippingFee,
+    TaxConfig taxConfig,
+    double taxAmount,
     double totalAmount,
     bool isDark,
   ) {
@@ -1390,16 +1403,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       child: Column(
         children: [
           _buildBillingRow(
-            'Produit',
-            OLogisticsCalculator.formatFee(controller.basePrice.value),
+            'product_label'.tr,
+            OLogisticsCalculator.formatFeeLocalized(controller.basePrice.value),
             isDark,
           ),
           const SizedBox(height: 10),
           _buildBillingRow(
             'Livraison (${logisticsRate.zone})',
-            OLogisticsCalculator.formatFee(shippingFee),
+            OLogisticsCalculator.formatFeeLocalized(shippingFee),
             isDark,
           ),
+          if (taxConfig.applies) ...[
+            const SizedBox(height: 10),
+            _buildBillingRow(
+              'Taxes (${taxConfig.fullLabel})',
+              OLogisticsCalculator.formatFeeLocalized(taxAmount),
+              isDark,
+              isHighlighted: true,
+            ),
+          ],
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 14),
             child: Container(height: 1, color: const Color(0xFFF0EDEA)),
@@ -1448,7 +1470,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ],
                 ),
                 Text(
-                  OLogisticsCalculator.formatFee(totalAmount),
+                  OLogisticsCalculator.formatFeeLocalized(totalAmount),
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
@@ -1464,23 +1486,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildBillingRow(String label, String value, bool isDark) {
+  Widget _buildBillingRow(
+    String label,
+    String value,
+    bool isDark, {
+    bool isHighlighted = false,
+    bool isSubdued = false,
+  }) {
+    final labelColor = isSubdued
+        ? (isDark ? Colors.white30 : const Color(0xFFB0AAA2))
+        : (isDark ? Colors.white54 : const Color(0xFF888480));
+    final valueColor = isHighlighted
+        ? const Color(0xFFE67E22)
+        : isSubdued
+            ? (isDark ? Colors.white30 : const Color(0xFFB0AAA2))
+            : (isDark ? Colors.white : const Color(0xFF1A1A1A));
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 14,
-            color: isDark ? Colors.white54 : const Color(0xFF888480),
-          ),
+          style: TextStyle(fontSize: 14, color: labelColor),
         ),
         Text(
           value,
           style: TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+            fontWeight: isHighlighted ? FontWeight.w700 : FontWeight.w600,
+            color: valueColor,
           ),
         ),
       ],
@@ -1579,8 +1613,8 @@ class _MeasurementPromptBottomSheet extends StatelessWidget {
               ),
               icon: const Icon(Iconsax.scan,
                   color: Colors.white, size: 18),
-              label: const Text('Prendre mes mesures (IA)',
-                  style: TextStyle(
+              label: Text('take_measurements'.tr,
+                  style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16)),
@@ -1599,7 +1633,7 @@ class _MeasurementPromptBottomSheet extends StatelessWidget {
                 );
               },
               child: Text(
-                'Choisir une taille standard',
+                'choose_standard_size'.tr,
                 style: TextStyle(
                     color: Colors.grey[500],
                     fontWeight: FontWeight.w600),
@@ -1686,10 +1720,10 @@ class _StandardSizePickerSheetState
               ),
               const SizedBox(height: 20),
 
-              if (couple) _partnerLabel('Partenaire 1', '1', isDark),
+              if (couple) _partnerLabel('partner_1'.tr, '1', isDark),
               if (couple) const SizedBox(height: 14),
 
-              const Text('GENRE', style: _labelStyle),
+              Text('gender'.tr, style: _labelStyle),
               const SizedBox(height: 8),
               _genderRow(_gender, (v) => setState(() {
                     _gender = v;
@@ -1698,13 +1732,13 @@ class _StandardSizePickerSheetState
                   })),
               const SizedBox(height: 14),
 
-              const Text('TAILLE HAUT', style: _labelStyle),
+              Text('top_size'.tr, style: _labelStyle),
               const SizedBox(height: 10),
               _sizeGrid(_topSizes, _topSize,
                   (v) => setState(() => _topSize = v)),
               const SizedBox(height: 14),
 
-              const Text('TAILLE BAS — PANTALON', style: _labelStyle),
+              Text('bottom_size'.tr, style: _labelStyle),
               const SizedBox(height: 10),
               _sizeGrid(_bottomSizes, _bottomSize,
                   (v) => setState(() => _bottomSize = v)),
@@ -1714,10 +1748,10 @@ class _StandardSizePickerSheetState
                 Container(height: 1, color: const Color(0xFFEEEBE6)),
                 const SizedBox(height: 22),
 
-                _partnerLabel('Partenaire 2', '2', isDark),
+                _partnerLabel('partner_2'.tr, '2', isDark),
                 const SizedBox(height: 14),
 
-                const Text('GENRE', style: _labelStyle),
+                Text('gender'.tr, style: _labelStyle),
                 const SizedBox(height: 8),
                 _genderRow(_gender2, (v) => setState(() {
                       _gender2 = v;
@@ -1726,13 +1760,13 @@ class _StandardSizePickerSheetState
                     })),
                 const SizedBox(height: 14),
 
-                const Text('TAILLE HAUT', style: _labelStyle),
+                Text('top_size'.tr, style: _labelStyle),
                 const SizedBox(height: 10),
                 _sizeGrid(_topSizes, _topSize2,
                     (v) => setState(() => _topSize2 = v)),
                 const SizedBox(height: 14),
 
-                const Text('TAILLE BAS — PANTALON', style: _labelStyle),
+                Text('bottom_size'.tr, style: _labelStyle),
                 const SizedBox(height: 10),
                 _sizeGrid(_bottomSizes, _bottomSize2,
                     (v) => setState(() => _bottomSize2 = v)),
@@ -1769,8 +1803,8 @@ class _StandardSizePickerSheetState
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Confirmer',
-                      style: TextStyle(
+                  child: Text('confirm'.tr,
+                      style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 14)),
                 ),
               ),

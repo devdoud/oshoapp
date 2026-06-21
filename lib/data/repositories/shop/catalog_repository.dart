@@ -27,7 +27,10 @@ class CatalogRepository extends GetxController {
     try {
       final response = await _supabase
           .from('products')
-          .select('*, category:categories(*)')
+          .select(
+            '*, fabric_options, embroidery_options, finish_options, '
+            'perfect_for, category:categories(*)',
+          )
           .eq('is_featured', true);
       final data = List<Map<String, dynamic>>.from(response);
       return _sortByNewest(
@@ -41,7 +44,10 @@ class CatalogRepository extends GetxController {
     try {
       final response = await _supabase
           .from('products')
-          .select('*, category:categories(*)');
+          .select(
+            '*, fabric_options, embroidery_options, finish_options, '
+            'perfect_for, category:categories(*)',
+          );
       final data = List<Map<String, dynamic>>.from(response);
       return _sortByNewest(
           data.map((json) => ProductModel.fromJson(json)).toList());
@@ -52,9 +58,14 @@ class CatalogRepository extends GetxController {
 
   Future<ProductModel?> getProductById(String id) async {
     try {
+      // Les nouvelles colonnes JSONB sont nommées explicitement pour contourner
+      // le cache PostgREST qui peut ignorer les colonnes ajoutées via migration.
       final response = await _supabase
           .from('products')
-          .select('*, category:categories(*)')
+          .select(
+            '*, fabric_options, embroidery_options, finish_options, '
+            'perfect_for, category:categories(*)',
+          )
           .eq('id', id)
           .maybeSingle();
       if (response == null) return null;
@@ -68,7 +79,10 @@ class CatalogRepository extends GetxController {
     try {
       final response = await _supabase
           .from('products')
-          .select('*, category:categories(*)')
+          .select(
+            '*, fabric_options, embroidery_options, finish_options, '
+            'perfect_for, category:categories(*)',
+          )
           .eq('category_id', categoryId);
       final data = List<Map<String, dynamic>>.from(response);
       return _sortByNewest(
@@ -151,8 +165,7 @@ class CatalogRepository extends GetxController {
         'fabric_options': product.fabricOptions,
         'embroidery_options': product.embroideryOptions,
         'finish_options': product.finishOptions,
-        'perfect_for': product.perfectFor,
-        'price_usd': product.priceUsd,
+        'perfect_for': product.perfectFor?.map((e) => e.toJson()).toList(),
       };
 
       final response = await _supabase
@@ -190,8 +203,7 @@ class CatalogRepository extends GetxController {
         'fabric_options': product.fabricOptions,
         'embroidery_options': product.embroideryOptions,
         'finish_options': product.finishOptions,
-        'perfect_for': product.perfectFor,
-        'price_usd': product.priceUsd,
+        'perfect_for': product.perfectFor?.map((e) => e.toJson()).toList(),
       };
 
       await _supabase

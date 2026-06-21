@@ -9,7 +9,6 @@ import 'package:osho/navigation_menu.dart';
 import 'package:osho/utils/constants/colors.dart';
 import 'package:osho/utils/constants/image_strings.dart';
 import 'package:osho/utils/constants/sizes.dart';
-import 'package:osho/utils/constants/text_strings.dart';
 import 'package:osho/utils/helpers/logistics_calculator.dart';
 
 class StoreScreen extends StatelessWidget {
@@ -21,7 +20,7 @@ class StoreScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: OAppBar(
-        title: Text("Mon Panier",
+        title: Text('my_cart'.tr,
             style: Theme.of(context).textTheme.headlineSmall),
         showBackArrow: true,
       ),
@@ -40,12 +39,12 @@ class StoreScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: OSizes.defaultSpace),
                   Text(
-                    "Votre panier est vide",
+                    'cart_empty_title'.tr,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: OSizes.sm),
                   Text(
-                    "Ajoutez vos modèles préférés pour les retrouver ici.",
+                    'cart_empty_sub'.tr,
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -72,7 +71,7 @@ class StoreScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(OText.seeCatalogue,
+                            Text('see_catalogue'.tr,
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyLarge
@@ -208,7 +207,7 @@ class StoreScreen extends StatelessWidget {
                 ],
                 const SizedBox(height: 6),
                 Text(
-                  OLogisticsCalculator.formatFee(item.price),
+                  OLogisticsCalculator.formatFeeLocalized(item.price),
                   style: const TextStyle(
                     color: OColors.primary,
                     fontWeight: FontWeight.bold,
@@ -326,10 +325,11 @@ class StoreScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _summaryRow('Sous-total', OLogisticsCalculator.formatFee(subtotal)),
+          _summaryRow('subtotal'.tr,
+              OLogisticsCalculator.formatFeeLocalized(subtotal)),
           const SizedBox(height: 8),
-          _summaryRow('Livraison (${logisticsRate.weightLabel})',
-              OLogisticsCalculator.formatFee(logisticsRate.fee)),
+          _summaryRow('${'shipping_fee'.tr} (${logisticsRate.weightLabel})',
+              OLogisticsCalculator.formatFeeLocalized(logisticsRate.fee)),
           const SizedBox(height: 6),
           Row(
             children: [
@@ -337,14 +337,14 @@ class StoreScreen extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Estimation Benin. Le pays au checkout peut ajuster ce tarif.',
+                  'shipping_estimate_note'.tr,
                   style: TextStyle(color: Colors.grey[600], fontSize: 11),
                 ),
               ),
             ],
           ),
           const Divider(height: 24),
-          _summaryRow('Total', OLogisticsCalculator.formatFee(total),
+          _summaryRow('total'.tr, OLogisticsCalculator.formatFeeLocalized(total),
               isTotal: true),
         ],
       ),

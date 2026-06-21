@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:osho/features/authentication/screens/signup/widgets/signup_form.dart';
 import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/sizes.dart';
-import '../../../../utils/constants/text_strings.dart';
 import '../../../../utils/helpers/helper_functions.dart';
 
 class SignupScreen extends StatelessWidget {
@@ -48,7 +48,7 @@ class SignupScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'Nouveau compte',
+                  'new_account_label'.tr,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: dark ? Colors.white70 : OColors.primary,
                         fontWeight: FontWeight.w700,
@@ -57,7 +57,7 @@ class SignupScreen extends StatelessWidget {
               ),
               const SizedBox(height: OSizes.spaceBtwInputFields),
               Text(
-                OText.signupTitle,
+                'signup_title'.tr,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color: dark ? OColors.white : OColors.textprimary,
                       fontSize: 38,
@@ -66,7 +66,7 @@ class SignupScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Creez votre espace client pour enregistrer vos mesures et suivre vos commandes.',
+                'signup_header_sub'.tr,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: dark ? Colors.white60 : OColors.grey2,
                       height: 1.5,

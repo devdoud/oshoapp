@@ -7,7 +7,6 @@ import 'package:osho/features/authentication/screens/login/login.dart';
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/image_strings.dart';
 import '../../../utils/constants/sizes.dart';
-import '../../../utils/constants/text_strings.dart';
 import '../../styles/spacing_styles.dart';
 
 class SuccessScreen extends StatelessWidget {
@@ -71,7 +70,7 @@ class SuccessScreen extends StatelessWidget {
           textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: OColors.white),
         ),
         child: Text(
-            OText.continu,
+            'continue'.tr,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: OColors.white,
               fontSize: 16,
